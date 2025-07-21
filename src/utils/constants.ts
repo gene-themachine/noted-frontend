@@ -1,5 +1,5 @@
 // API Configuration
-export const SERVER_URL = 'http://localhost:3333';
+export const SERVER_URL = 'https://noted-api-el58.onrender.com';
 
 // Route Constants
 export const ROUTES = {
