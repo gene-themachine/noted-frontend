@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { Outlet, useParams } from 'react-router-dom';
+import { Outlet, useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import ProjectController from './projectController';
 import RightBar from './rightBar';
@@ -8,12 +8,13 @@ import ContextModal from '../../components/rightBar/components/contextModal';
 import { useCreateFolder, useCreateNote, useUpdateStudyOptions, useNote } from '../../hooks/note';
 import { useProject } from '../../hooks/project';
 import { useProjectLibraryItems, useAddLibraryItemToNote, useRemoveLibraryItemFromNote } from '../../hooks/library';
-import { useCreateFlashcards } from '../../hooks/flashcard';
+import { useCreateFlashcards, useFlashcardStatusStream } from '../../hooks/flashcard';
 import useViewStore from '../../store/slices/viewSlice';
 import AddLibraryItemModal from '../../components/common/AddLibraryItemModal';
 
 const ProjectLayout = () => {
   const { projectId, noteId } = useParams<{ projectId: string; noteId?: string }>();
+  const navigate = useNavigate();
   const [showController, setShowController] = useState(false); // Mobile only
   const [showRightBar, setShowRightBar] = useState(false); // Mobile only
   const [isControllerCollapsed, setIsControllerCollapsed] = useState(false); // Desktop only
@@ -40,6 +41,24 @@ const ProjectLayout = () => {
   const createFlashcardsMutation = useCreateFlashcards();
   const addLibraryItemMutation = useAddLibraryItemToNote();
   const removeLibraryItemMutation = useRemoveLibraryItemFromNote();
+
+  // SSE for real-time flashcard status updates
+  const flashcardStatusStream = useFlashcardStatusStream(activeNoteId, {
+    onComplete: (data) => {
+      console.log('🎉 Flashcards completed, navigating to flashcard screen...')
+      if (projectId && activeNoteId) {
+        navigate(`/project/${projectId}/note/${activeNoteId}/flashcards`)
+      }
+    },
+    onFailed: (data) => {
+      console.log('❌ Flashcard generation failed:', data.message)
+      // Status will be updated automatically via SSE, no need to do anything else
+    },
+    onError: (error) => {
+      console.error('SSE connection error:', error)
+      // Could show a retry mechanism here if needed
+    }
+  });
 
   const handleAddItem = (type: 'folder' | 'note', name: string) => {
     if (!project) return;
@@ -76,7 +95,7 @@ const ProjectLayout = () => {
     // First enable flashcards in study options
     updateStudyOptionsMutation.mutate({
       noteId: activeNoteId,
-      payload: { flashcard: true },
+      payload: { flashcard: 'queued' },
     });
 
     // Create flashcards using the API

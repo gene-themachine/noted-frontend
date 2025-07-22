@@ -1,19 +1,25 @@
-import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ChevronLeft, ChevronRight, X, ThumbsDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Flashcard } from '../../types';
 
 interface FlashCardComponentProps {
   flashcards: Flashcard[];
   onClose?: () => void;
+  onComplete?: () => void;
+  onFail?: () => void;
 }
 
 const FlashCardComponent: React.FC<FlashCardComponentProps> = ({ 
   flashcards, 
-  onClose 
+  onClose,
+  onComplete,
+  onFail
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [flippedCards, setFlippedCards] = useState<Set<number>>(new Set());
+  const [studyCompleted, setStudyCompleted] = useState(false);
+  const [studyStartTime] = useState(Date.now());
 
   if (!flashcards || flashcards.length === 0) {
     return (
@@ -49,12 +55,42 @@ const FlashCardComponent: React.FC<FlashCardComponentProps> = ({
         newSet.delete(currentIndex);
       } else {
         newSet.add(currentIndex);
+        
+        // Check if all cards have been viewed (flipped at least once)
+        if (newSet.size === flashcards.length && !studyCompleted && onComplete) {
+          setStudyCompleted(true);
+          onComplete();
+        }
       }
       return newSet;
     });
   };
 
   const isFlipped = flippedCards.has(currentIndex);
+
+  // Add failure detection logic
+  const handleEarlyExit = () => {
+    const studyTimeMinutes = (Date.now() - studyStartTime) / (1000 * 60);
+    const cardsViewed = flippedCards.size;
+    const completionRate = cardsViewed / flashcards.length;
+    
+    // Mark as failed if user exits very early or views very few cards
+    if ((studyTimeMinutes < 1 && cardsViewed < 3) || completionRate < 0.3) {
+      if (onFail) {
+        onFail();
+      }
+    }
+    
+    if (onClose) {
+      onClose();
+    }
+  };
+
+  const handleMarkAsFailed = () => {
+    if (onFail) {
+      onFail();
+    }
+  };
 
   const slideVariants = {
     enter: (direction: number) => ({
@@ -78,6 +114,30 @@ const FlashCardComponent: React.FC<FlashCardComponentProps> = ({
 
   return (
     <div className="flex flex-col items-center justify-center h-full min-h-[500px] p-8">
+      {/* Top controls */}
+      <div className="absolute top-4 right-4 flex gap-2">
+        <motion.button
+          onClick={handleMarkAsFailed}
+          className="flex items-center gap-2 px-3 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <ThumbsDown className="w-4 h-4" />
+          Mark as Failed
+        </motion.button>
+        
+        {onClose && (
+          <motion.button
+            onClick={handleEarlyExit}
+            className="flex items-center justify-center w-10 h-10 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg transition-colors"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <X className="w-5 h-5" />
+          </motion.button>
+        )}
+      </div>
+
       {/* Progress indicator */}
       <motion.div 
         className="mb-8 text-lg font-bold text-foreground tracking-wider"

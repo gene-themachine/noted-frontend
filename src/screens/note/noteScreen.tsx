@@ -40,28 +40,34 @@ export default function NoteScreen() {
   const removeLibraryItemMutation = useRemoveLibraryItemFromNote();
   const markFlashcardsAsNeedingUpdateMutation = useMarkFlashcardsAsNeedingUpdate();
 
-
   const [name, setName] = useState('');
   const [content, setContent] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showAttachedFiles, setShowAttachedFiles] = useState(false);
 
-
   const nameInputRef = useRef<HTMLTextAreaElement>(null);
   const contentTextAreaRef = useRef<HTMLTextAreaElement>(null);
 
+  // Auto-resize textarea function
+  const autoResizeTextarea = (element: HTMLTextAreaElement) => {
+    element.style.height = 'auto';
+    element.style.height = `${element.scrollHeight}px`;
+  };
 
   useEffect(() => {
     if (nameInputRef.current) {
-      // Auto-resize the height of the textarea
-      nameInputRef.current.style.height = 'auto';
-      nameInputRef.current.style.height = `${nameInputRef.current.scrollHeight}px`;
+      autoResizeTextarea(nameInputRef.current);
     }
   }, [name]);
 
+  useEffect(() => {
+    if (contentTextAreaRef.current) {
+      autoResizeTextarea(contentTextAreaRef.current);
+    }
+  }, [content]);
+
   // Set the active note in the view store
-  
 
   useEffect(() => {
     if (note) {
@@ -149,13 +155,11 @@ export default function NoteScreen() {
     removeLibraryItemMutation.mutate({ noteId, libraryItemId });
   };
 
-
-
   const hasUnsavedChanges = note && (content !== note.content || name !== note.name);
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full">
+      <div className="flex items-center justify-center min-h-screen">
         <div className="text-2xl font-medium text-foreground-secondary">Loading Note...</div>
       </div>
     );
@@ -163,7 +167,7 @@ export default function NoteScreen() {
 
   if (isError) {
     return (
-      <div className="flex items-center justify-center h-full">
+      <div className="flex items-center justify-center min-h-screen">
         <div className="text-2xl font-medium text-status-error">Error loading note.</div>
       </div>
     );
@@ -171,8 +175,8 @@ export default function NoteScreen() {
 
   if (!note) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-2xl font-medium text-foreground-secondary">Note not a found.</div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-2xl font-medium text-foreground-secondary">Note not found.</div>
       </div>
     );
   }
@@ -183,18 +187,21 @@ export default function NoteScreen() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="h-full overflow-y-auto p-4 md:p-6 lg:p-8 xl:p-12 font-helvetica"
+        className="min-h-screen p-4 md:p-6 lg:p-8 xl:p-12 font-helvetica"
       >
-        <div className="max-w-4xl mx-auto h-full flex flex-col">
+        <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="mb-8">
             <div className="flex flex-col xl:flex-row xl:justify-between xl:items-start gap-x-8 gap-y-4">
               <textarea
                 ref={nameInputRef}
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  autoResizeTextarea(e.target);
+                }}
                 placeholder="Untitled Note"
-                className="w-full xl:flex-grow text-3xl lg:text-5xl font-bold text-foreground bg-transparent focus:outline-none placeholder-foreground-muted transition-colors duration-200 resize-none overflow-hidden"
+                className="w-full xl:flex-grow text-3xl lg:text-5xl font-bold text-foreground bg-transparent focus:outline-none placeholder-foreground-muted transition-colors duration-200 resize-none overflow-hidden min-h-[3rem]"
                 rows={1}
               />
               <div className="w-full xl:w-auto xl:max-w-xs flex flex-col items-stretch gap-2 flex-shrink-0">
@@ -312,9 +319,12 @@ export default function NoteScreen() {
           <textarea
             ref={contentTextAreaRef}
             value={content}
-            onChange={(e) => setContent(e.target.value)}
+            onChange={(e) => {
+              setContent(e.target.value);
+              autoResizeTextarea(e.target);
+            }}
             placeholder="Start writing..."
-            className="w-full flex-1 text-lg text-foreground-secondary leading-relaxed bg-transparent resize-none focus:outline-none placeholder-foreground-muted transition-colors duration-200"
+            className="w-full text-xl text-foreground-secondary leading-relaxed bg-transparent resize-none focus:outline-none placeholder-foreground-muted transition-colors duration-200 p-4 border-none min-h-[400px]"
           />
         </div>
       </motion.div>

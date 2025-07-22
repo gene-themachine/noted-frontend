@@ -62,13 +62,13 @@ export const getAvailableStudyOptions = async () => {
 }
 
 export type UpdateStudyOptionsPayload = {
-  flashcard?: boolean
-  blurtItOut?: boolean
-  multipleChoice?: boolean
-  fillInTheBlank?: boolean
-  matching?: boolean
-  shortAnswer?: boolean
-  essay?: boolean
+  flashcard?: 'queued' | 'completed' | 'failed' | null
+  blurtItOut?: 'queued' | 'completed' | 'failed' | null
+  multipleChoice?: 'queued' | 'completed' | 'failed' | null
+  fillInTheBlank?: 'queued' | 'completed' | 'failed' | null
+  matching?: 'queued' | 'completed' | 'failed' | null
+  shortAnswer?: 'queued' | 'completed' | 'failed' | null
+  essay?: 'queued' | 'completed' | 'failed' | null
 }
 
 export const updateStudyOptions = async (

@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, RefreshCw } from 'lucide-react';
 import FlashCardComponent from '../../components/mainWindow/flashCardComponent';
 import { useFlashcardsByNote } from '../../hooks/flashcard';
-import { useNote } from '../../hooks/note';
+import { useNote, useUpdateStudyOptions } from '../../hooks/note';
 
 
 export default function FlashcardScreen() {
@@ -12,10 +12,29 @@ export default function FlashcardScreen() {
   
   const { data: flashcardsData, isLoading, error } = useFlashcardsByNote(noteId!);
   const { data: note } = useNote(noteId!);
+  const updateStudyOptionsMutation = useUpdateStudyOptions();
 
   const handleBack = () => {
     navigate(`/project/${projectId}/note/${noteId}/flashcards`);
   };
+
+  const handleStudyComplete = useCallback(() => {
+    if (noteId) {
+      updateStudyOptionsMutation.mutate({
+        noteId,
+        payload: { flashcard: 'completed' },
+      });
+    }
+  }, [noteId, updateStudyOptionsMutation]);
+
+  const handleStudyFailed = useCallback(() => {
+    if (noteId) {
+      updateStudyOptionsMutation.mutate({
+        noteId,
+        payload: { flashcard: 'failed' },
+      });
+    }
+  }, [noteId, updateStudyOptionsMutation]);
 
   if (isLoading) {
     return (
@@ -80,7 +99,11 @@ export default function FlashcardScreen() {
       
 
       {/* Flashcard Component */}
-      <FlashCardComponent flashcards={flashcards} />
+      <FlashCardComponent 
+        flashcards={flashcards} 
+        onComplete={handleStudyComplete}
+        onFail={handleStudyFailed}
+      />
     </div>
   );
 }
