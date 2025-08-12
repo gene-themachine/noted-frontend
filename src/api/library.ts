@@ -2,11 +2,7 @@ import axios from 'axios';
 import { SERVER_URL } from '../utils/constants';
 import { getBearerToken } from '../utils/localStorage';
 import { api } from './apiUtils'
-
-interface PresignedUrlResponse {
-  presignedUrl: string;
-  key: string;
-}
+import { PresignedUrlResponse } from '../types';
 
 function handleError(error: unknown) {
     if (axios.isAxiosError(error)) {
@@ -23,14 +19,14 @@ export const getPresignedUrl = async (file: File): Promise<PresignedUrlResponse>
       fileType: file.type,
     });
 
-    // The backend response is nested, so we extract the required parts.
+    // The backend response structure is: { presignedUrl: string, key: string, expiresIn: number }
     const responseData = response.data;
-    if (!responseData.presignedUrl || !responseData.presignedUrl.presignedUrl || !responseData.key) {
+    if (!responseData.presignedUrl || !responseData.key) {
       throw new Error('Invalid response structure from getPresignedUrl');
     }
 
     return {
-      presignedUrl: responseData.presignedUrl.presignedUrl,
+      presignedUrl: responseData.presignedUrl,
       key: responseData.key,
     };
   } catch (error) {

@@ -3,14 +3,14 @@ import { Outlet, useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import ProjectController from './projectController';
 import RightBar from './rightBar';
-import AddItemModal from '../../components/common/AddItemModal';
-import ContextModal from '../../components/rightBar/components/contextModal';
+import AddItemModal from '@/components/modals/AddItemModal';
+import ContextModal from '@/components/modals/contextModal';
 import { useCreateFolder, useCreateNote, useUpdateStudyOptions, useNote } from '../../hooks/note';
 import { useProject } from '../../hooks/project';
 import { useProjectLibraryItems, useAddLibraryItemToNote, useRemoveLibraryItemFromNote } from '../../hooks/library';
-import { useCreateFlashcards, useFlashcardStatusStream } from '../../hooks/flashcard';
+import { useCreateFlashcards } from '../../hooks/flashcard';
 import useViewStore from '../../store/slices/viewSlice';
-import AddLibraryItemModal from '../../components/common/AddLibraryItemModal';
+import AddLibraryItemModal from '@/components/modals/AddLibraryItemModal';
 
 const ProjectLayout = () => {
   const { projectId, noteId } = useParams<{ projectId: string; noteId?: string }>();
@@ -42,23 +42,6 @@ const ProjectLayout = () => {
   const addLibraryItemMutation = useAddLibraryItemToNote();
   const removeLibraryItemMutation = useRemoveLibraryItemFromNote();
 
-  // SSE for real-time flashcard status updates
-  const flashcardStatusStream = useFlashcardStatusStream(activeNoteId, {
-    onComplete: (data) => {
-      console.log('🎉 Flashcards completed, navigating to flashcard screen...')
-      if (projectId && activeNoteId) {
-        navigate(`/project/${projectId}/note/${activeNoteId}/flashcards`)
-      }
-    },
-    onFailed: (data) => {
-      console.log('❌ Flashcard generation failed:', data.message)
-      // Status will be updated automatically via SSE, no need to do anything else
-    },
-    onError: (error) => {
-      console.error('SSE connection error:', error)
-      // Could show a retry mechanism here if needed
-    }
-  });
 
   const handleAddItem = (type: 'folder' | 'note', name: string) => {
     if (!project) return;

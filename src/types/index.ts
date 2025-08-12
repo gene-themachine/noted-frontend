@@ -25,10 +25,18 @@ export interface Note {
   updatedAt: string;
 }
 
+// Lightweight note interface for UI selection lists (no content field)
+export interface NoteSummary {
+  id: string;
+  name: string;
+  createdAt: string;
+}
+
 export interface Project {
   id: string;
   name: string;
   description: string | null;
+  color: string | null;
   createdAt: string;
   updatedAt: string;
   folderTree?: FolderNode;
@@ -61,4 +69,165 @@ export interface Flashcard {
   createdAt: string
   updatedAt: string
   libraryItems?: LibraryItem[]
+}
+
+export interface MultipleChoiceQuestion {
+  id: string;
+  multipleChoiceSetId: string;
+  question: string;
+  answer: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MultipleChoiceSet {
+  id: string;
+  userId: string | null;
+  projectId: string | null;
+  noteId: string | null;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+  multipleChoiceQuestions?: MultipleChoiceQuestion[];
+}
+
+export interface FreeResponseQuestion {
+  id: string;
+  freeResponseSetId: string;
+  question: string;
+  answer: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FreeResponseSet {
+  id: string;
+  userId: string | null;
+  projectId: string | null;
+  noteId: string | null;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+  freeResponses?: FreeResponseQuestion[];
+}
+
+// API Payload Types
+export interface CreateNotePayload {
+  projectId: string;
+  name: string;
+  folderPath?: string[];
+}
+
+export interface CreateFolderPayload {
+  projectId: string;
+  name: string;
+  folderPath?: string[];
+}
+
+export interface UpdateNotePayload extends Partial<Omit<Note, 'id' | 'createdAt' | 'updatedAt'>> {}
+
+export interface UpdateStudyOptionsPayload {
+  flashcard?: 'queued' | 'completed' | 'failed' | null;
+  blurtItOut?: 'queued' | 'completed' | 'failed' | null;
+  multipleChoice?: 'queued' | 'completed' | 'failed' | null;
+  fillInTheBlank?: 'queued' | 'completed' | 'failed' | null;
+  matching?: 'queued' | 'completed' | 'failed' | null;
+  shortAnswer?: 'queued' | 'completed' | 'failed' | null;
+  essay?: 'queued' | 'completed' | 'failed' | null;
+}
+
+export interface CreateMultipleChoiceSetPayload {
+  noteId: string;
+  name: string;
+  selectedLibraryItems?: string[];
+  includeNoteContent: boolean;
+}
+
+export interface UpdateMultipleChoiceSetPayload {
+  name?: string;
+}
+
+export interface CreateFreeResponseSetPayload {
+  noteId: string;
+  name: string;
+  selectedLibraryItems?: string[];
+  includeNoteContent: boolean;
+}
+
+export interface UpdateFreeResponseSetPayload {
+  name?: string;
+}
+
+export interface CreateFlashcardsPayload {
+  noteId: string;
+  selectedLibraryItems?: string[];
+  includeNoteContent: boolean;
+}
+
+export interface PresignedUrlResponse {
+  presignedUrl: string;
+  key: string;
+}
+
+// SSE (Server-Sent Events) Types
+export interface SSEEvent {
+  type: string;
+  data: any;
+  timestamp: string;
+  channel: string;
+}
+
+export interface SSEConnectionOptions {
+  onConnected?: () => void;
+  onDisconnected?: () => void;
+  onReconnecting?: () => void;
+  onFlashcardStatus?: (data: any) => void;
+  onMultipleChoiceStatus?: (data: any) => void;
+  onStudyOptionsUpdate?: (data: any) => void;
+  onNoteUpdate?: (data: any) => void;
+  onError?: (error: Event) => void;
+}
+
+export interface UseOptimizedSSEReturn {
+  isConnected: boolean;
+  error: Error | null;
+  connectionCount: number;
+  lastEvent: SSEEvent | null;
+  connect: () => void;
+  disconnect: () => void;
+  retry: () => void;
+}
+
+// UI Component Types
+export type RightBarView = 'todos' | 'note';
+
+export interface ViewState {
+  activeNoteId: string | null;
+  rightBarView: RightBarView;
+  isFlashcardModalOpen: boolean;
+  showNote: (noteId: string) => void;
+  hideNote: () => void;
+  setRightBarView: (view: RightBarView) => void;
+  openFlashcardModal: () => void;
+  closeFlashcardModal: () => void;
+}
+
+// Multiple Choice Question Parsing Types
+export interface ParsedChoice {
+  letter: string;
+  text: string;
+}
+
+export interface ParsedQuestion {
+  id: string;
+  question: string;
+  choices: ParsedChoice[];
+  correctAnswer: string;
+  explanation: string;
+}
+
+export interface UserAnswer {
+  questionId: string;
+  selectedAnswer: string;
+  isCorrect: boolean;
 }

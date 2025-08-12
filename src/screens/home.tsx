@@ -6,7 +6,7 @@ import { useProjects, useCreateProject } from "@/hooks/project";
 import { Project } from "@/types/index";
 import ProjectCard from "@/components/project/projectCard";
 import StartWorkflow from '@/components/startWorkflow';
-import AddProjectModal from '@/components/project/addProjectModal';
+import AddProjectModal from '@/components/modals/addProjectModal';
 import { PROJECT_CONSTANTS } from '@/utils/constants';
 
 export default function HomePage() {
@@ -17,12 +17,13 @@ export default function HomePage() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
-  const handleCreateProject = async (name: string, description: string) => {
+  const handleCreateProject = async (name: string, description: string, color: string) => {
     setIsCreating(true);
     try {
       await createProjectMutation.mutateAsync({
         name,
         description,
+        color,
       });
       setIsModalOpen(false);
     } catch (error) {

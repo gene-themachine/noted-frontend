@@ -1,28 +1,28 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import toast from 'react-hot-toast';
+import './noteEditor.css';
 import {
   Trash2,
   Save,
-  X,
   Paperclip,
   Plus,
   ChevronDown,
   ChevronUp,
-  Search,
-  FileText,
-  PlusCircle,
-  MinusCircle,
+  AlertCircle,
+  CheckCircle,
 } from 'lucide-react';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Underline from '@tiptap/extension-underline';
+import { IndentExtension } from '../../extensions/indentExtension';
+import { QABlockExtension, QAParagraph } from '../../extensions/qaBlockExtension';
 import { useNote, useUpdateNote, useDeleteNote } from '../../hooks/note';
-import {
-  useProjectLibraryItems,
-  useAddLibraryItemToNote,
-  useRemoveLibraryItemFromNote,
-} from '../../hooks/library';
 import { useMarkFlashcardsAsNeedingUpdate } from '../../hooks/flashcard';
+import { useStreamQA } from '../../hooks/qa';
 import { LibraryItem } from '../../types';
-import useViewStore from '../../store/slices/viewSlice';
+import FloatingToolbar from '../../components/editor/FloatingToolbar';
 
 interface NoteScreenContext {
   openLibraryModal: () => void;
@@ -35,21 +35,65 @@ export default function NoteScreen() {
   const { data: note, isLoading, isError } = useNote(noteId!);
   const updateNoteMutation = useUpdateNote();
   const deleteNoteMutation = useDeleteNote();
-  const { data: projectLibrary } = useProjectLibraryItems(projectId!);
-  const addLibraryItemMutation = useAddLibraryItemToNote();
-  const removeLibraryItemMutation = useRemoveLibraryItemFromNote();
   const markFlashcardsAsNeedingUpdateMutation = useMarkFlashcardsAsNeedingUpdate();
+  const { startStream, stopStream } = useStreamQA();
 
   const [name, setName] = useState('');
   const [content, setContent] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showAttachedFiles, setShowAttachedFiles] = useState(false);
+  const [toolbarKey, setToolbarKey] = useState(0);
+  const [saveError, setSaveError] = useState(false);
+  const [lastSavedContent, setLastSavedContent] = useState<{ name: string; content: string } | null>(null);
 
   const nameInputRef = useRef<HTMLTextAreaElement>(null);
-  const contentTextAreaRef = useRef<HTMLTextAreaElement>(null);
+  const isMountedRef = useRef(true);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const retryCountRef = useRef(0);
 
-  // Auto-resize textarea function
+  // Configure custom underline with keyboard shortcuts
+  const CustomUnderline = Underline.extend({
+    name: 'customUnderline', // Give it a unique name
+    addKeyboardShortcuts() {
+      return {
+        'Mod-u': () => this.editor.commands.toggleUnderline(),
+        'Mod-U': () => this.editor.commands.toggleUnderline(), // For caps lock
+      }
+    },
+  });
+
+  // Initialize Tiptap editor only when we have note data
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      QAParagraph, // Extend paragraph with data-qa-id support
+      CustomUnderline,
+      IndentExtension,
+      QABlockExtension,
+    ],
+    content: '',
+    onUpdate: ({ editor }) => {
+      if (isMountedRef.current) {
+        const htmlContent = editor.getHTML();
+        setContent(htmlContent);
+      }
+    },
+    onTransaction: () => {
+      // Force re-render to update toolbar state immediately
+      if (isMountedRef.current) {
+        setToolbarKey(prev => prev + 1);
+      }
+    },
+    editorProps: {
+      attributes: {
+        class: 'w-full text-base text-foreground-secondary leading-relaxed bg-transparent focus:outline-none p-4 border-none min-h-[400px] font-helvetica tiptap-editor',
+        style: 'font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 1rem; line-height: 1.75; color: rgb(31 41 55);',
+      },
+    },
+  }, [noteId]); // Only recreate when switching notes
+
+  // Auto-resize textarea function for name only
   const autoResizeTextarea = (element: HTMLTextAreaElement) => {
     element.style.height = 'auto';
     element.style.height = `${element.scrollHeight}px`;
@@ -61,78 +105,275 @@ export default function NoteScreen() {
     }
   }, [name]);
 
-  useEffect(() => {
-    if (contentTextAreaRef.current) {
-      autoResizeTextarea(contentTextAreaRef.current);
+  // Stabilized event handler callback
+  const handleQABlockInserted = useCallback((event: Event) => {
+    const customEvent = event as CustomEvent;
+    const { id, question } = customEvent.detail;
+    console.log('🤔 Q&A block inserted:', { id, question, noteId });
+    
+    if (!noteId || !id || !question) {
+      console.error('❌ Missing required parameters for Q&A:', { noteId, id, question });
+      return;
     }
-  }, [content]);
 
-  // Set the active note in the view store
+    // Generate Q&A answer using streaming
+    console.log('🚀 Starting Q&A streaming...');
+    startStream(
+      {
+        noteId,
+        qaBlockId: id,
+        question,
+      },
+      // onChunk: Update the Q&A block with accumulated answer
+      (chunk: string, accumulatedAnswer: string) => {
+        console.log('📄 Received chunk:', { chunk, accumulatedLength: accumulatedAnswer.length });
+        if (editor) {
+          editor.commands.updateQABlock(id, {
+            status: 'loading',
+            answer: accumulatedAnswer,
+          });
+        }
+      },
+      // onComplete: Mark as completed
+      (finalAnswer: string) => {
+        console.log('✅ Q&A streaming completed:', { finalLength: finalAnswer.length });
+        if (editor) {
+          editor.commands.updateQABlock(id, {
+            status: 'completed',
+            answer: finalAnswer,
+          });
+        }
+      },
+      // onError: Show error
+      (error: string) => {
+        console.error('❌ Q&A streaming error:', error);
+        if (editor) {
+          editor.commands.updateQABlock(id, {
+            status: 'error',
+            errorMessage: error,
+          });
+        }
+      }
+    );
+  }, [noteId, editor, startStream]);
 
+  // Handle Q&A block insertion
+  useEffect(() => {
+
+    window.addEventListener('qa-block-inserted', handleQABlockInserted as EventListener);
+    return () => {
+      window.removeEventListener('qa-block-inserted', handleQABlockInserted as EventListener);
+    };
+  }, [handleQABlockInserted]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+      if (editor && !editor.isDestroyed) {
+        editor.destroy();
+      }
+    };
+  }, [editor]);
+
+
+  // Initialize state when note loads or changes
   useEffect(() => {
     if (note) {
-      // Only update state if the input is not focused to avoid overwriting user input
-      if (document.activeElement !== nameInputRef.current) {
-        setName(note.name);
-      }
-      if (document.activeElement !== contentTextAreaRef.current) {
-        setContent(note.content);
+      setName(note.name);
+      setContent(note.content);
+      setLastSavedContent({ name: note.name, content: note.content });
+      setSaveError(false);
+      retryCountRef.current = 0;
+      
+      // Update editor content when switching notes
+      if (editor && !editor.isDestroyed) {
+        editor.commands.setContent(note.content);
       }
     }
-  }, [note]);
+  }, [note?.id, editor]); // Only when switching notes
+  
+  // Sync state back after successful saves (when note data updates but ID stays same)
+  useEffect(() => {
+    if (note && note.content !== content) {
+      // Note was updated (likely from save), sync back the content
+      setContent(note.content);
+      if (editor && !editor.isFocused && !editor.isDestroyed) {
+        editor.commands.setContent(note.content);
+      }
+    }
+    if (note && note.name !== name && document.activeElement !== nameInputRef.current) {
+      // Note name was updated, sync back (but don't overwrite if user is typing)
+      setName(note.name);
+    }
+  }, [note?.updatedAt]); // Sync when note is updated (after saves)
+
+  // Save content to localStorage as backup
+  useEffect(() => {
+    if (noteId && content && name) {
+      const backupData = { noteId, name, content, timestamp: Date.now() };
+      localStorage.setItem(`note-backup-${noteId}`, JSON.stringify(backupData));
+    }
+  }, [noteId, name, content]);
+
+  // Restore from localStorage if needed
+  useEffect(() => {
+    if (noteId && note && !content && !name) {
+      const backupKey = `note-backup-${noteId}`;
+      const backup = localStorage.getItem(backupKey);
+      if (backup) {
+        try {
+          const backupData = JSON.parse(backup);
+          if (backupData.noteId === noteId && backupData.timestamp > Date.now() - 24 * 60 * 60 * 1000) {
+            toast('Restored unsaved changes from backup', {
+              icon: '💾',
+              duration: 3000,
+            });
+            setName(backupData.name);
+            setContent(backupData.content);
+            if (editor && !editor.isDestroyed) {
+              editor.commands.setContent(backupData.content);
+            }
+          }
+        } catch (e) {
+          console.error('Failed to restore backup:', e);
+        }
+      }
+    }
+  }, [noteId, note]);
+
+  // Robust save function with retry mechanism
+  const performSave = useCallback(async (retryCount = 0) => {
+    if (!note || !noteId || !isMountedRef.current) return;
+
+    const contentHasChanged = content !== (lastSavedContent?.content ?? note.content);
+    const nameHasChanged = name !== (lastSavedContent?.name ?? note.name);
+
+    if (!contentHasChanged && !nameHasChanged) return;
+
+    console.log(`💾 Saving note (attempt ${retryCount + 1})...`);
+    setIsSaving(true);
+    setSaveError(false);
+
+    try {
+      await updateNoteMutation.mutateAsync(
+        { noteId: note.id, payload: { name, content } }
+      );
+
+      if (isMountedRef.current) {
+        setLastSavedContent({ name, content });
+        retryCountRef.current = 0;
+        setSaveError(false);
+        setIsSaving(false);
+        
+        // Clear localStorage backup on successful save
+        localStorage.removeItem(`note-backup-${noteId}`);
+        
+        // Show success toast for manual saves or after retry
+        if (retryCount > 0) {
+          toast.success('Note saved successfully', {
+            duration: 2000,
+            icon: <CheckCircle className="w-4 h-4" />,
+          });
+        }
+
+        // Mark flashcards as needing update if content changed
+        if (contentHasChanged && noteId) {
+          markFlashcardsAsNeedingUpdateMutation.mutate(noteId);
+        }
+      }
+    } catch (error) {
+      console.error('❌ Save failed:', error);
+      
+      if (isMountedRef.current) {
+        setSaveError(true);
+        setIsSaving(false);
+
+        // Implement exponential backoff retry
+        if (retryCount < 3) {
+          const delay = Math.min(1000 * Math.pow(2, retryCount), 10000);
+          toast.error(`Save failed. Retrying in ${delay / 1000}s...`, {
+            duration: delay,
+            icon: <AlertCircle className="w-4 h-4" />,
+          });
+          
+          setTimeout(() => {
+            if (isMountedRef.current) {
+              performSave(retryCount + 1);
+            }
+          }, delay);
+        } else {
+          toast.error('Failed to save note. Please try again manually.', {
+            duration: 5000,
+            icon: <AlertCircle className="w-4 h-4" />,
+          });
+        }
+      }
+    }
+  }, [note, noteId, name, content, lastSavedContent, updateNoteMutation, markFlashcardsAsNeedingUpdateMutation]);
 
   // Debounced save for note content and title
   useEffect(() => {
     // Do not save if the note is not loaded yet
-    if (!note) return;
-    // Do not save if content is unchanged
-    if (content === note.content && name === note.name) return;
+    if (!note || !noteId) return;
+    
+    // Don't save if content/name are still empty (initial state)
+    if (!content && !name) return;
 
-    // Check if content specifically has changed (not just name)
-    const contentHasChanged = content !== note.content;
+    // Clear existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
 
-    const handler = setTimeout(() => {
-      setIsSaving(true);
-      updateNoteMutation.mutate(
-        { noteId: note.id, payload: { name, content } },
-        {
-          onSuccess: () => {
-            setIsSaving(false);
-            // Mark flashcards as needing update if content changed
-            if (contentHasChanged && noteId) {
-              markFlashcardsAsNeedingUpdateMutation.mutate(noteId);
-            }
-          },
-          onError: () => setIsSaving(false),
-        },
-      );
-    }, 1000); // 1-second debounce delay
+    // Set new timeout for debounced save
+    saveTimeoutRef.current = setTimeout(() => {
+      performSave();
+    }, 800); // 0.8-second debounce delay
 
-    // eslint-disable-next-line consistent-return
     return () => {
-      clearTimeout(handler);
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
     };
-  }, [content, name, note, updateNoteMutation, noteId, markFlashcardsAsNeedingUpdateMutation]);
+  }, [content, name, performSave]);
+
+  // Periodic auto-save every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (lastSavedContent && (content !== lastSavedContent.content || name !== lastSavedContent.name)) {
+        console.log('⏰ Periodic auto-save triggered');
+        performSave();
+      }
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [lastSavedContent, content, name, performSave]);
+
+  // Force save on unmount
+  useEffect(() => {
+    return () => {
+      if (isMountedRef.current && lastSavedContent && 
+          (content !== lastSavedContent.content || name !== lastSavedContent.name)) {
+        console.log('🚪 Force save on unmount');
+        // Use synchronous save or beacon API here if needed
+        performSave();
+      }
+    };
+  }, []);
 
   const handleManualSave = () => {
-    if (!note) return;
+    if (!note || !isMountedRef.current) return;
     
-    // Check if content specifically has changed (not just name)
-    const contentHasChanged = content !== note.content;
-    
-    setIsSaving(true);
-    updateNoteMutation.mutate(
-      { noteId: note.id, payload: { name, content } },
+    toast.promise(
+      performSave(),
       {
-        onSuccess: () => {
-          setIsSaving(false);
-          // Mark flashcards as needing update if content changed
-          if (contentHasChanged && noteId) {
-            markFlashcardsAsNeedingUpdateMutation.mutate(noteId);
-          }
-        },
-        onError: () => setIsSaving(false),
+        loading: 'Saving...',
+        success: 'Note saved successfully',
+        error: 'Failed to save note',
       },
+      {
+        duration: 2000,
+      }
     );
   };
 
@@ -145,19 +386,54 @@ export default function NoteScreen() {
     });
   };
 
-  const handleAddLibraryItem = (libraryItemId: string) => {
-    if (!noteId) return;
-    addLibraryItemMutation.mutate({ noteId, libraryItemId });
+
+  const handleInsertFormat = (formatType: string) => {
+    if (!editor) {
+      return;
+    }
+
+    editor.chain().focus();
+
+    switch (formatType) {
+      case 'bold':
+        editor.chain().focus().toggleBold().run();
+        break;
+      case 'italic':
+        editor.chain().focus().toggleItalic().run();
+        break;
+      case 'underline':
+        editor.chain().focus().toggleUnderline().run();
+        break;
+      case 'h1':
+        editor.chain().focus().toggleHeading({ level: 1 }).run();
+        break;
+      case 'h2':
+        editor.chain().focus().toggleHeading({ level: 2 }).run();
+        break;
+      case 'h3':
+        editor.chain().focus().toggleHeading({ level: 3 }).run();
+        break;
+      default:
+        break;
+    }
   };
 
-  const handleRemoveLibraryItem = (libraryItemId: string) => {
-    if (!noteId) return;
-    removeLibraryItemMutation.mutate({ noteId, libraryItemId });
-  };
+  const hasUnsavedChanges = lastSavedContent 
+    ? (content !== lastSavedContent.content || name !== lastSavedContent.name)
+    : (note && (content !== note.content || name !== note.name));
 
-  const hasUnsavedChanges = note && (content !== note.content || name !== note.name);
+  // Debug logging for save status
+  useEffect(() => {
+    console.log('📊 Save Status Debug:', {
+      hasUnsavedChanges,
+      isSaving,
+      saveError,
+      contentMatch: content === (lastSavedContent?.content ?? note?.content),
+      nameMatch: name === (lastSavedContent?.name ?? note?.name),
+    });
+  }, [hasUnsavedChanges, isSaving, saveError, content, name, lastSavedContent, note]);
 
-  if (isLoading) {
+  if (isLoading || !note) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-2xl font-medium text-foreground-secondary">Loading Note...</div>
@@ -173,10 +449,11 @@ export default function NoteScreen() {
     );
   }
 
-  if (!note) {
+  // Wait for editor to be initialized with note content and title to be loaded
+  if (!editor || !name) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-2xl font-medium text-foreground-secondary">Note not found.</div>
+        <div className="text-2xl font-medium text-foreground-secondary">Initializing editor...</div>
       </div>
     );
   }
@@ -206,11 +483,28 @@ export default function NoteScreen() {
               />
               <div className="w-full xl:w-auto xl:max-w-xs flex flex-col items-stretch gap-2 flex-shrink-0">
                 <div className="flex items-center justify-end gap-2">
-                  <span className="text-sm text-foreground-tertiary mr-2">
-                    {isSaving
-                      ? 'Saving...'
-                      : note.updatedAt && `Saved ${new Date(note.updatedAt).toLocaleString()}`}
-                  </span>
+                  {(isSaving || saveError || hasUnsavedChanges) && (
+                    <span className={`text-sm mr-2 flex items-center gap-1 ${
+                      saveError ? 'text-status-error' : 'text-foreground-tertiary'
+                    }`}>
+                      {isSaving ? (
+                        <>
+                          <div className="w-3 h-3 border-2 border-primary-blue border-t-transparent rounded-full animate-spin" />
+                          Saving...
+                        </>
+                      ) : saveError ? (
+                        <>
+                          <AlertCircle className="w-3 h-3" />
+                          Save failed
+                        </>
+                      ) : hasUnsavedChanges ? (
+                        <>
+                          <div className="w-2 h-2 bg-amber-500 rounded-full" />
+                          Unsaved changes
+                        </>
+                      ) : null}
+                    </span>
+                  )}
 
                   <button
                     type="button"
@@ -222,6 +516,7 @@ export default function NoteScreen() {
                         : 'text-foreground-muted cursor-not-allowed opacity-50'
                     }`}
                     aria-label="Save Note"
+                    title={saveError ? 'Click to retry save' : 'Save Note'}
                   >
                     <Save className="w-5 h-5" />
                   </button>
@@ -315,19 +610,15 @@ export default function NoteScreen() {
             </div>
           </div>
 
-          {/* Editor */}
-          <textarea
-            ref={contentTextAreaRef}
-            value={content}
-            onChange={(e) => {
-              setContent(e.target.value);
-              autoResizeTextarea(e.target);
-            }}
-            placeholder="Start writing..."
-            className="w-full text-xl text-foreground-secondary leading-relaxed bg-transparent resize-none focus:outline-none placeholder-foreground-muted transition-colors duration-200 p-4 border-none min-h-[400px]"
-          />
+          {/* Editor - Single Consolidated Editor */}
+          <div className="w-full">
+            <EditorContent editor={editor} />
+          </div>
         </div>
       </motion.div>
+
+      {/* Floating Toolbar */}
+      <FloatingToolbar key={toolbarKey} onInsertFormat={handleInsertFormat} editor={editor} />
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (

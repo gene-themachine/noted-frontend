@@ -2,7 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
-import FileTree from '../../components/file-tree/FileTree';
+import FileTree from '../file-tree/FileTree';
 import { useProject } from '../../hooks/project';
 
 interface ProjectControllerProps {

@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { SERVER_URL } from '../utils/constants';
 import { getBearerToken } from '../utils/localStorage';
-import { Note } from '../types';
+import { Note, CreateNotePayload, CreateFolderPayload, UpdateNotePayload, UpdateStudyOptionsPayload } from '../types';
 import { api } from './apiUtils'
 
 const noteApi = axios.create({
@@ -21,27 +21,13 @@ noteApi.interceptors.request.use(
   },
 );
 
-export type CreateNotePayload = {
-  projectId: string;
-  name: string;
-  folderPath?: string[];
-};
-
 export const createNote = (payload: CreateNotePayload) =>
   noteApi.post('/notes', payload);
-
-export type CreateFolderPayload = {
-  projectId: string;
-  name: string;
-  folderPath?: string[];
-};
 
 export const createFolder = (payload: CreateFolderPayload) =>
   noteApi.post('/folders', payload);
 
 export const getNote = (noteId: string) => noteApi.get(`/notes/${noteId}`);
-
-export type UpdateNotePayload = Partial<Omit<Note, 'id' | 'createdAt' | 'updatedAt'>>;
 
 export const updateNote = (noteId: string, payload: UpdateNotePayload) =>
   noteApi.put(`/notes/${noteId}`, payload);
@@ -59,16 +45,6 @@ export const getStudyOptions = async (noteId: string) => {
 export const getAvailableStudyOptions = async () => {
   const response = await api.get('/study-options')
   return response.data
-}
-
-export type UpdateStudyOptionsPayload = {
-  flashcard?: 'queued' | 'completed' | 'failed' | null
-  blurtItOut?: 'queued' | 'completed' | 'failed' | null
-  multipleChoice?: 'queued' | 'completed' | 'failed' | null
-  fillInTheBlank?: 'queued' | 'completed' | 'failed' | null
-  matching?: 'queued' | 'completed' | 'failed' | null
-  shortAnswer?: 'queued' | 'completed' | 'failed' | null
-  essay?: 'queued' | 'completed' | 'failed' | null
 }
 
 export const updateStudyOptions = async (

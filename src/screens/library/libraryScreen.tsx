@@ -26,7 +26,7 @@ export default function LibraryScreen() {
   const toggleGlobalMutation = useMutation({
     mutationFn: toggleGlobalStatus,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['libraryItems', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['projectLibrary', projectId] });
     },
   });
 

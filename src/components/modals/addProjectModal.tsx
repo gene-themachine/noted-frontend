@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
+import ColorPicker from '../common/ColorPicker';
 
 interface AddProjectModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (name: string, description: string) => void;
+  onSubmit: (name: string, description: string, color: string) => void;
   theme?: 'light' | 'dark';
 }
 
@@ -17,13 +18,15 @@ export default function AddProjectModal({
 }: AddProjectModalProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [color, setColor] = useState('#4ECDC4');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (name.trim()) {
-      onSubmit(name.trim(), description.trim());
+      onSubmit(name.trim(), description.trim(), color);
       setName('');
       setDescription('');
+      setColor('#4ECDC4');
     }
   };
 
@@ -89,6 +92,19 @@ export default function AddProjectModal({
                 )}
                 autoFocus
               />
+            </div>
+
+            <div className="mb-6">
+              <label
+                htmlFor="project-color"
+                className={clsx(
+                  'block text-sm font-medium mb-2',
+                  isLightTheme ? 'text-gray-600' : 'text-gray-400',
+                )}
+              >
+                Project Color
+              </label>
+              <ColorPicker value={color} onChange={setColor} theme={theme} />
             </div>
 
             <div className="mb-8">

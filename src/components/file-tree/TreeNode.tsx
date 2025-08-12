@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Folder, FileText, ChevronRight, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { TreeNode as TreeNodeType } from '../../types';
-import AddItemModal from '../common/AddItemModal';
+import AddItemModal from '@/components/modals/AddItemModal';
 import {
   useCreateNote,
   useCreateFolder,

@@ -85,7 +85,7 @@ export default function DragAndDrop({ projectId }: DragAndDropProps) {
           setFile(null); // Reset after submission
           
           // Refresh the library items for this project
-          queryClient.invalidateQueries({ queryKey: ['libraryItems', projectId] });
+          queryClient.invalidateQueries({ queryKey: ['projectLibrary', projectId] });
         } else {
           console.error('Failed to upload file to S3.');
           const responseText = await uploadResponse.text();

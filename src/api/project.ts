@@ -25,5 +25,12 @@ export const getProjectById = (id: string) => projectApi.get(`/projects/${id}`);
 export const getProjectTree = (projectId: string) =>
   projectApi.get(`/projects/${projectId}/tree`);
 
-export const createProject = (name: string, description: string) =>
-  projectApi.post('/projects', { name, description });
+export const createProject = (name: string, description: string, color?: string) =>
+  projectApi.post('/projects', { name, description, color });
+
+export const getProjectNotes = (projectId: string) =>
+  projectApi.get(`/projects/${projectId}/notes`);
+
+// Lightweight endpoint for note selection UI - returns only id, name, createdAt (no content)
+export const getProjectNotesSummary = (projectId: string) =>
+  projectApi.get(`/projects/${projectId}/notes/summary`);

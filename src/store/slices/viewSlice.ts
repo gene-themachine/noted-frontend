@@ -1,17 +1,5 @@
 import { create } from 'zustand';
-
-type RightBarView = 'todos' | 'note';
-
-interface ViewState {
-  activeNoteId: string | null;
-  rightBarView: RightBarView;
-  isFlashcardModalOpen: boolean;
-  showNote: (noteId: string) => void;
-  hideNote: () => void;
-  setRightBarView: (view: RightBarView) => void;
-  openFlashcardModal: () => void;
-  closeFlashcardModal: () => void;
-}
+import { RightBarView, ViewState } from '../../types';
 
 const useViewStore = create<ViewState>()((set) => ({
   activeNoteId: null,

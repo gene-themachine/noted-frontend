@@ -72,6 +72,8 @@ export const useNote = (noteId: string) =>
     queryKey: ['note', noteId],
     queryFn: async () => (await apiGetNote(noteId)).data.note,
     enabled: !!noteId,
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   })
 
 export const useUpdateNote = () => {
@@ -148,32 +150,16 @@ export const useUpdateStudyOptions = () => {
     }) => updateStudyOptions(noteId, payload),
     // Optimistic update for instant UI feedback
     onMutate: async ({ noteId, payload }) => {
-      // Cancel outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ['studyOptions', noteId] })
-      
-      // Snapshot previous value
-      const previousStudyOptions = queryClient.getQueryData(['studyOptions', noteId])
-      
-      // Optimistically update cache
+      // Optimistically update cache for immediate UI feedback
       queryClient.setQueryData(['studyOptions', noteId], (old: any) => ({
         ...old,
         ...payload,
       }))
-      
-      // Return context with previous and new values
-      return { previousStudyOptions, noteId }
     },
-    onError: (err, variables, context) => {
-      // Rollback on error
-      if (context?.previousStudyOptions) {
-        queryClient.setQueryData(['studyOptions', context.noteId], context.previousStudyOptions)
-      }
-      // You could add toast notification here if needed
+    onError: (err) => {
       console.error('Failed to update study options:', err)
+      // SSE will provide the correct state, no manual rollback needed
     },
-    onSuccess: (data, variables) => {
-      // Update cache with server response
-      queryClient.setQueryData(['studyOptions', variables.noteId], data)
-    },
+    // SSE automatically updates cache with server response, no manual update needed
   })
 }
