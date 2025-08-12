@@ -22,6 +22,7 @@ import FlashcardDetailScreen from './screens/studySets/FlashcardDetailScreen';
 import MultipleChoiceSetScreen from './screens/studySets/MultipleChoiceSetScreen';
 import MultipleChoiceDetailScreen from './screens/studySets/MultipleChoiceDetailScreen';
 import StarredFlashcardsScreen from './screens/studySets/StarredFlashcardsScreen';
+import StarredFlashcardsDetailScreen from './screens/studySets/StarredFlashcardsDetailScreen';
 function App() {
   useEffect(() => {
     // Load fonts programmatically as a fallback
@@ -54,6 +55,8 @@ function App() {
           <Route path="study-sets/multiple-choice/:setId/study" element={<MultipleChoiceDetailScreen />} />
           <Route path="study-sets/multiple-choice/:setId/study/:questionId" element={<MultipleChoiceDetailScreen />} />
           <Route path="starred-flashcards" element={<StarredFlashcardsScreen />} />
+          <Route path="starred-flashcards/study" element={<StarredFlashcardsDetailScreen />} />
+          <Route path="starred-flashcards/study/:cardId" element={<StarredFlashcardsDetailScreen />} />
           <Route path="note/:noteId" element={<NoteScreen />} />
           <Route path="note/:noteId/free-response" element={<FreeResponseScreen />} />
           

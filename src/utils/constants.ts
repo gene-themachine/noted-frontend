@@ -1,5 +1,5 @@
 // API Configuration
-export const SERVER_URL = 'http://localhost:3333';
+export const SERVER_URL = import.meta.env.VITE_API_URL || 'http://localhost:3333';
 
 // Route Constants
 export const ROUTES = {

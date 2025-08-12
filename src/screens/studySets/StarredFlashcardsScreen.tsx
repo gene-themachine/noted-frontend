@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Star, RefreshCw, ArrowLeft, BookOpen } from 'lucide-react';
+import { Star, RefreshCw, ArrowLeft, BookOpen, Play } from 'lucide-react';
 import { useProjectStarredFlashcards } from '../../hooks/studySets';
+import { Button } from '../../components/ui/button';
 
 export default function StarredFlashcardsScreen() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -47,6 +48,10 @@ export default function StarredFlashcardsScreen() {
     navigate(`/project/${projectId}/study-sets/flashcards/${flashcard.flashcardSet.id}/study/${flashcard.id}`);
   };
 
+  const handleStartStudy = () => {
+    navigate(`/project/${projectId}/starred-flashcards/study`);
+  };
+
   return (
     <div className="flex flex-col h-full p-8 max-w-4xl mx-auto">
       {/* Header */}
@@ -89,6 +94,13 @@ export default function StarredFlashcardsScreen() {
             <div className="text-sm text-foreground-secondary">
               {flashcards.length} starred flashcard{flashcards.length !== 1 ? 's' : ''}
             </div>
+            <Button
+              onClick={handleStartStudy}
+              className="flex items-center gap-2 bg-primary-blue hover:bg-blue-600 text-white"
+            >
+              <Play className="w-4 h-4" />
+              Learn
+            </Button>
           </div>
 
           {/* Flashcards Grid */}
