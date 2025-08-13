@@ -16,6 +16,13 @@ export function setBearerToken(token: string) {
 }
 
 /**
+ * Removes the bearer token from localStorage
+ */
+export function removeBearerToken(): void {
+  localStorage.removeItem(authTokenName);
+}
+
+/**
  * Clears all localStorage data for complete logout
  */
 export function clearAllStorage(): void {

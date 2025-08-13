@@ -12,16 +12,23 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white font-helvetica">
+    <div className="min-h-screen bg-home-background font-helvetica">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white border-b border-border-light">
-        <div className="max-w-6xl mx-auto flex items-center justify-between px-6 lg:px-8 py-5">
-          <div className="text-2xl font-bold text-foreground">Noted</div>
-          <nav className="hidden md:flex items-center space-x-8">
+      <header className="fixed top-0 left-0 right-0 z-30 bg-home-background">
+        <div className="flex items-center justify-between h-20 max-w-9xl mx-auto px-6 lg:px-8">
+          <h1 
+            className="text-3xl lg:text-4xl font-bold text-foreground tracking-tight cursor-pointer hover:text-foreground-secondary transition-colors duration-200"
+            onClick={() => navigate(ROUTES.LANDING)}
+          >
+            Noted
+          </h1>
+          
+          <nav className="hidden md:flex items-center gap-8">
             <a href="#features" className="text-foreground-secondary hover:text-foreground transition-colors">Features</a>
             <a href="#how-it-works" className="text-foreground-secondary hover:text-foreground transition-colors">How it works</a>
             <a href="#pricing" className="text-foreground-secondary hover:text-foreground transition-colors">Pricing</a>
           </nav>
+          
           <Button 
             className="bg-primary-blue text-white hover:bg-hover-blue rounded-lg px-6 py-2"
             onClick={handleGetStarted}
@@ -32,7 +39,7 @@ export default function LandingPage() {
       </header>
 
       {/* Hero Section */}
-      <section className="px-6 lg:px-8 py-20 lg:py-32">
+      <section className="px-6 lg:px-8 py-20 lg:py-32 pt-32">
         <div className="max-w-6xl mx-auto">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h1 className="text-3xl lg:text-4xl font-bold text-foreground mb-6 leading-tight">
@@ -149,10 +156,10 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-foreground mb-4">
-              Simple. Powerful. Effective.
+              How to use Noted
             </h2>
             <p className="text-lg text-foreground-secondary max-w-2xl mx-auto">
-              Get started in minutes and transform your learning experience with our intuitive platform.
+              Follow these simple steps to transform your learning experience with our AI-powered note-taking platform.
             </p>
           </div>
 
@@ -161,9 +168,9 @@ export default function LandingPage() {
               <div className="w-16 h-16 bg-primary-blue rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-xl font-bold text-white">1</span>
               </div>
-              <h3 className="text-xl font-semibold text-foreground mb-2">Create Your Account</h3>
+              <h3 className="text-xl font-semibold text-foreground mb-2">Create Projects & Take Notes</h3>
               <p className="text-foreground-secondary">
-                Sign up in seconds and set up your personalized learning profile with your subjects and goals.
+                Create projects for each subject, organize notes in folders, and capture your thoughts with our rich text editor. Upload documents to your library for easy access.
               </p>
             </div>
 
@@ -171,9 +178,9 @@ export default function LandingPage() {
               <div className="w-16 h-16 bg-primary-orange rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-xl font-bold text-white">2</span>
               </div>
-              <h3 className="text-xl font-semibold text-foreground mb-2">Start Taking Notes</h3>
+              <h3 className="text-xl font-semibold text-foreground mb-2">Generate Study Materials</h3>
               <p className="text-foreground-secondary">
-                Begin capturing your thoughts and ideas with our intelligent note-taking system that learns from your style.
+                Use AI to instantly generate flashcards and multiple choice quizzes from your notes. Create custom study sets and star your favorite flashcards for focused learning.
               </p>
             </div>
 
@@ -181,9 +188,9 @@ export default function LandingPage() {
               <div className="w-16 h-16 bg-primary-yellow rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-xl font-bold text-white">3</span>
               </div>
-              <h3 className="text-xl font-semibold text-foreground mb-2">Learn Faster</h3>
+              <h3 className="text-xl font-semibold text-foreground mb-2">Study & Practice</h3>
               <p className="text-foreground-secondary">
-                Get instant help from your AI tutor, organize your knowledge, and accelerate your learning journey.
+                Practice with flashcards, take quizzes, and get instant AI tutoring help. Track your progress and focus on areas that need improvement to maximize your learning efficiency.
               </p>
             </div>
           </div>

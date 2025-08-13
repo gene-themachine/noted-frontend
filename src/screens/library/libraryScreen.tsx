@@ -10,12 +10,12 @@ import { getLibraryItemViewUrl, toggleGlobalStatus } from '../../api/library';
 
 const getFileIcon = (type: string) => {
   if (type.startsWith('image/')) {
-    return <FileImage className="w-8 h-8 text-blue-500" />;
+    return <FileImage className="w-5 h-5 text-primary-blue" />;
   }
   if (type === 'application/pdf') {
-    return <FileText className="w-8 h-8 text-red-500" />;
+    return <FileText className="w-5 h-5 text-red-500" />;
   }
-  return <FileText className="w-8 h-8 text-gray-500" />;
+  return <FileText className="w-5 h-5 text-foreground-secondary" />;
 };
 
 export default function LibraryScreen() {
@@ -40,15 +40,15 @@ export default function LibraryScreen() {
   };
 
   return (
-    <div className="p-8 h-full flex flex-col">
-      <h1 className="text-3xl font-bold text-foreground mb-8">Library</h1>
+    <div className="p-4 md:p-6 lg:p-8 h-full flex flex-col">
+      <h1 className="text-2xl font-bold text-foreground mb-6">Library</h1>
 
       {/* File Upload Dropdown Box */}
       <DragAndDrop projectId={projectId!} />
 
       {/* File List */}
-      <div className="flex-1 overflow-y-auto mt-4">
-        <h2 className="text-xl font-bold text-foreground mb-4">Uploaded Files</h2>
+      <div className="flex-1 overflow-y-auto mt-6">
+        <h2 className="text-lg font-semibold text-foreground mb-4">Files</h2>
         {isLoading && (
           <div className="flex justify-center items-center h-32">
             <Loader className="w-8 h-8 animate-spin" />
@@ -56,53 +56,52 @@ export default function LibraryScreen() {
         )}
         {error && <p className="text-red-500">Could not load files.</p>}
         {!isLoading && !error && (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {files && files.length > 0 ? (
               files.map((file: LibraryItem, i: number) => (
                 <motion.div
                   key={file.id}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.1 }}
-                  className="bg-surface p-4 rounded-lg flex items-center justify-between border border-border hover:shadow-md transition-shadow"
+                  transition={{ delay: i * 0.05 }}
+                  className="bg-surface p-3 rounded-lg flex items-center justify-between border border-border hover:bg-surface-hover transition-all duration-200"
                 >
                   <div
-                    className="flex items-center gap-4 cursor-pointer"
+                    className="flex items-center gap-3 cursor-pointer flex-1"
                     onClick={() => handleFileClick(file)}
                   >
                     {getFileIcon(file.mimeType)}
-                    <div>
-                      <p className="font-semibold text-foreground">{file.name}</p>
-                      <p className="text-sm text-foreground-secondary">
-                        {(file.size / 1024).toFixed(2)} KB - Added on{' '}
-                        {new Date(file.uploadedAt).toLocaleDateString()}
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-foreground truncate">{file.name}</p>
+                      <p className="text-xs text-foreground-secondary">
+                        {(file.size / 1024).toFixed(1)} KB • {new Date(file.uploadedAt).toLocaleDateString()}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1">
                     <button
                       type="button"
                       onClick={() => toggleGlobalMutation.mutate(file.id)}
-                      className="p-1 rounded-full text-foreground-muted hover:text-primary-green"
+                      className="p-1 rounded-full text-foreground-muted hover:text-primary-green transition-colors"
                       aria-label={file.isGlobal ? 'Mark as not global' : 'Mark as global'}
                     >
                       {file.isGlobal ? (
-                        <CheckSquare className="w-5 h-5 text-primary-green" />
+                        <CheckSquare className="w-4 h-4 text-primary-green" />
                       ) : (
-                        <Square className="w-5 h-5" />
+                        <Square className="w-4 h-4" />
                       )}
                     </button>
                     <button
                       type="button"
-                      className="p-2 text-foreground-muted rounded-full hover:bg-surface-hover hover:text-foreground"
+                      className="p-1 text-foreground-muted rounded-full hover:bg-surface-pressed hover:text-foreground transition-all"
                     >
-                      <MoreVertical className="w-5 h-5" />
+                      <MoreVertical className="w-4 h-4" />
                     </button>
                   </div>
                 </motion.div>
               ))
             ) : (
-              <p>No files uploaded yet.</p>
+              <p className="text-foreground-secondary text-sm text-center py-8">No files uploaded yet.</p>
             )}
           </div>
         )}

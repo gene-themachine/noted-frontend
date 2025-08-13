@@ -90,23 +90,34 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white font-helvetica">
+    <div className="min-h-screen bg-home-background font-helvetica">
       {/* Header */}
-      <header className="px-6 lg:px-8 py-6">
-        <div className="max-w-md mx-auto flex items-center justify-between">
-          <button
+      <header className="fixed top-0 left-0 right-0 z-30 bg-home-background">
+        <div className="flex items-center justify-between h-20 max-w-9xl mx-auto px-6 lg:px-8">
+          <h1 
+            className="text-3xl lg:text-4xl font-bold text-foreground tracking-tight cursor-pointer hover:text-foreground-secondary transition-colors duration-200"
             onClick={handleBackToHome}
-            className="flex items-center gap-2 text-foreground-secondary hover:text-foreground transition-colors"
           >
-            <ArrowLeft className="w-4 h-4" />
-            <span className="text-sm">Back to Home</span>
+            Noted
+          </h1>
+          
+          <nav className="hidden md:flex items-center gap-8">
+            <a href="#features" className="text-foreground-secondary hover:text-foreground transition-colors">Features</a>
+            <a href="#how-it-works" className="text-foreground-secondary hover:text-foreground transition-colors">How it works</a>
+            <a href="#pricing" className="text-foreground-secondary hover:text-foreground transition-colors">Pricing</a>
+          </nav>
+          
+          <button
+            onClick={() => navigate(ROUTES.REGISTER)}
+            className="text-foreground-secondary hover:text-foreground transition-colors text-sm font-medium"
+          >
+            Sign up
           </button>
-          <div className="text-xl font-bold text-foreground">Noted</div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="px-6 lg:px-8 py-12">
+      <main className="px-6 lg:px-8 py-12 pt-32">
         <div className="w-full max-w-md mx-auto">
           {/* Welcome Header */}
           <div className="text-center mb-10">

@@ -103,7 +103,7 @@ export default function DragAndDrop({ projectId }: DragAndDropProps) {
   };
 
   return (
-    <div className="mb-8">
+    <div className="mb-4">
       <div
         role="button"
         tabIndex={0}
@@ -113,10 +113,10 @@ export default function DragAndDrop({ projectId }: DragAndDropProps) {
         onClick={openFileDialog}
         onKeyDown={handleKeyDown}
         className={clsx(
-          'bg-surface border border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all duration-300',
-          'focus:outline-none focus:ring-2 focus:ring-primary-orange focus:ring-offset-2 focus:ring-offset-background',
+          'bg-surface border border-dashed rounded-lg p-4 text-center cursor-pointer transition-all duration-200',
+          'focus:outline-none focus:ring-2 focus:ring-primary-orange focus:ring-offset-2',
           {
-            'border-primary-orange bg-orange-50 scale-105 shadow-lg': isDragging,
+            'border-primary-orange bg-orange-50/50': isDragging,
             'border-border hover:border-foreground/30 hover:bg-surface-hover': !isDragging,
           },
         )}
@@ -127,10 +127,9 @@ export default function DragAndDrop({ projectId }: DragAndDropProps) {
           onChange={handleFileSelect}
           className="hidden"
         />
-        <div className="flex flex-col items-center justify-center space-y-3 text-foreground-secondary">
-          <UploadCloud className="w-10 h-10" />
-          <h2 className="text-lg font-semibold text-foreground">Attach a file</h2>
-          <p className="text-sm">Drag & drop or <span className="text-primary-orange font-semibold">click to browse</span></p>
+        <div className="flex flex-col items-center justify-center gap-2 text-foreground-secondary">
+          <UploadCloud className="w-6 h-6" />
+          <p className="text-sm font-medium text-foreground">Drop files or <span className="text-primary-orange">browse</span></p>
         </div>
       </div>
 
@@ -140,49 +139,50 @@ export default function DragAndDrop({ projectId }: DragAndDropProps) {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="mt-6 bg-surface-elevated p-4 rounded-xl flex items-center justify-between border border-border"
+            className="mt-3 bg-surface-elevated p-3 rounded-lg flex items-center justify-between border border-border"
           >
-            <div className="flex items-center gap-3">
-              <File className="w-6 h-6 text-primary-orange" />
-              <p className="text-foreground font-medium">{file.name}</p>
-              <p className="text-sm text-foreground-muted">
+            <div className="flex items-center gap-2">
+              <File className="w-4 h-4 text-primary-orange" />
+              <p className="text-sm font-medium text-foreground">{file.name}</p>
+              <p className="text-xs text-foreground-muted">
                 ({(file.size / 1024).toFixed(2)} KB)
               </p>
             </div>
             <button
               type="button"
               onClick={() => setFile(null)}
-              className="p-1.5 text-foreground-muted hover:text-foreground rounded-full hover:bg-surface-pressed"
+              className="p-1 text-foreground-muted hover:text-foreground rounded-full hover:bg-surface-pressed"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <div className="mt-4 flex items-center">
-        <input
-          type="checkbox"
-          id="isGlobal"
-          checked={isGlobal}
-          onChange={(e) => setIsGlobal(e.target.checked)}
-          className="h-4 w-4 rounded border-gray-300 text-primary-orange focus:ring-primary-orange"
-        />
-        <label htmlFor="isGlobal" className="ml-2 block text-sm text-foreground">
-          Make this file global
-        </label>
-      </div>
-
-      <div className="mt-6">
-        <button
-          type="button"
-          onClick={handleSubmit}
-          disabled={!file || !projectId || uploading}
-          className="w-full px-6 py-3 bg-primary-orange text-white font-bold rounded-lg transition-opacity disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
-        >
-          {uploading ? 'Uploading...' : 'Submit'}
-        </button>
-      </div>
+      {file && (
+        <div className="mt-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="isGlobal"
+              checked={isGlobal}
+              onChange={(e) => setIsGlobal(e.target.checked)}
+              className="h-3 w-3 rounded border-gray-300 text-primary-orange focus:ring-primary-orange"
+            />
+            <label htmlFor="isGlobal" className="text-xs text-foreground-secondary">
+              Make global
+            </label>
+          </div>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={!file || !projectId || uploading}
+            className="px-4 py-2 bg-primary-orange text-white text-sm font-medium rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary-orange/90"
+          >
+            {uploading ? 'Uploading...' : 'Upload'}
+          </button>
+        </div>
+      )}
     </div>
   );
 } 
