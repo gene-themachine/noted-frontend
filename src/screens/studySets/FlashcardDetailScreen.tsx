@@ -92,9 +92,9 @@ export default function FlashcardDetailScreen() {
 
   const slideVariants = {
     enter: (direction: number) => ({
-      x: direction > 0 ? 150 : -150,
+      x: direction > 0 ? 100 : -100,
       opacity: 0,
-      scale: 0.94,
+      scale: 0.96,
     }),
     center: {
       zIndex: 1,
@@ -104,28 +104,28 @@ export default function FlashcardDetailScreen() {
     },
     exit: (direction: number) => ({
       zIndex: 0,
-      x: direction < 0 ? 150 : -150,
+      x: direction < 0 ? 100 : -100,
       opacity: 0,
-      scale: 0.94,
+      scale: 0.96,
     }),
   };
   
   return (
-    <div className="flex flex-col h-screen overflow-hidden p-4 md:p-6">
+    <div className="flex flex-col h-full overflow-hidden px-2 py-1 md:px-4 md:py-2">
       {/* Header with back button and star button */}
       <motion.div
-        className="w-full flex justify-between items-center mb-2 flex-shrink-0"
+        className="w-full flex justify-between items-center mb-1 flex-shrink-0"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
       >
         <motion.button
           onClick={handleBack}
-          className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-sm"
+          className="flex items-center gap-1 px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-xs"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="w-3 h-3" />
           Back to Flashcards
         </motion.button>
 
@@ -133,7 +133,7 @@ export default function FlashcardDetailScreen() {
           onClick={handleStarToggle}
           disabled={starFlashcard.isPending || unstarFlashcard.isPending}
           className={`
-            flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 text-sm
+            flex items-center gap-1 px-2 py-1 rounded-lg transition-all duration-200 text-xs
             ${isCurrentFlashcardStarred 
               ? 'bg-yellow-100 hover:bg-yellow-200 text-yellow-800' 
               : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
@@ -144,7 +144,7 @@ export default function FlashcardDetailScreen() {
           whileTap={{ scale: 0.95 }}
         >
           <Star 
-            className={`w-4 h-4 transition-colors ${isCurrentFlashcardStarred ? 'fill-current' : ''}`} 
+            className={`w-3 h-3 transition-colors ${isCurrentFlashcardStarred ? 'fill-current' : ''}`} 
           />
           {isCurrentFlashcardStarred ? 'Starred' : 'Star'}
         </motion.button>
@@ -154,7 +154,7 @@ export default function FlashcardDetailScreen() {
       <div className="flex flex-col items-center justify-center flex-1 min-h-0">
         {/* Progress indicator */}
         <motion.div 
-          className="mb-4 text-base md:text-lg font-bold text-foreground tracking-wider flex-shrink-0"
+          className="mb-4 md:mb-6 text-sm md:text-base font-bold text-foreground tracking-wider flex-shrink-0"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
@@ -163,7 +163,7 @@ export default function FlashcardDetailScreen() {
         </motion.div>
 
       {/* Flashcard */}
-      <div className="relative w-full max-w-lg aspect-square flex-shrink-0">
+      <div className="relative w-full max-w-lg aspect-[4/5] max-h-[55vh] md:max-h-[60vh] flex-shrink-0">
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div
             key={currentIndex}
@@ -174,55 +174,66 @@ export default function FlashcardDetailScreen() {
             exit="exit"
             transition={{
               type: "spring",
-              stiffness: 200,
-              damping: 25,
-              mass: 0.8,
+              stiffness: 400,
+              damping: 30,
+              mass: 0.5,
             }}
             className="absolute inset-0"
           >
-            <div 
-              className="relative w-full h-full cursor-pointer perspective-1000"
+            <motion.div 
+              className="relative w-full h-full cursor-pointer"
               onClick={handleCardClick}
+              animate={{ y: isFlipped ? -10 : 0 }}
+              transition={{ 
+                type: "spring",
+                stiffness: 400,
+                damping: 30,
+                mass: 0.6,
+              }}
+              whileHover={{ scale: 1.015 }}
+              whileTap={{ scale: 0.985 }}
             >
-              <motion.div
-                className="relative w-full h-full"
-                style={{ transformStyle: 'preserve-3d' }}
-                animate={{ rotateY: isFlipped ? 180 : 0 }}
-                transition={{ 
-                  type: "spring",
-                  stiffness: 300,
-                  damping: 20,
-                  mass: 0.6,
-                }}
-                whileHover={{ scale: 1.015 }}
-                whileTap={{ scale: 0.985 }}
-              >
-                {/* Front of card (Term) */}
-                <div className="absolute inset-0 w-full h-full backface-hidden">
-                  <div className="w-full h-full bg-primary-blue rounded-3xl shadow-xl flex items-center justify-center p-8">
-                    <div className="text-white text-2xl font-semibold text-center leading-relaxed">
-                      {currentFlashcard.term}
+              <AnimatePresence mode="wait">
+                {!isFlipped ? (
+                  <motion.div
+                    key="term"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="absolute inset-0 w-full h-full"
+                  >
+                    <div className="w-full h-full bg-primary-blue rounded-3xl shadow-xl flex items-center justify-center p-6 md:p-8">
+                      <div className="text-white text-xl md:text-2xl font-semibold text-center leading-relaxed overflow-auto max-h-full">
+                        {currentFlashcard.term}
+                      </div>
                     </div>
-                  </div>
-                </div>
-
-                {/* Back of card (Definition) */}
-                <div className="absolute inset-0 w-full h-full backface-hidden rotate-y-180">
-                  <div className="w-full h-full bg-gradient-to-br from-slate-700 to-slate-800 rounded-3xl shadow-xl flex items-center justify-center p-8">
-                    <div className="text-white text-lg text-center leading-relaxed">
-                      {currentFlashcard.definition}
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="definition"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="absolute inset-0 w-full h-full"
+                  >
+                    <div className="w-full h-full bg-gradient-to-br from-slate-700 to-slate-800 rounded-3xl shadow-xl flex items-center justify-center p-6 md:p-8">
+                      <div className="text-white text-base md:text-lg text-center leading-relaxed overflow-auto max-h-full">
+                        {currentFlashcard.definition}
+                      </div>
                     </div>
-                  </div>
-                </div>
-              </motion.div>
-            </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
           </motion.div>
         </AnimatePresence>
       </div>
 
       {/* Navigation */}
       <motion.div 
-        className="flex items-center justify-center gap-6 mt-4 flex-shrink-0"
+        className="flex items-center justify-center gap-4 md:gap-6 mt-2 md:mt-3 flex-shrink-0"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.2 }}
@@ -231,7 +242,7 @@ export default function FlashcardDetailScreen() {
           onClick={handlePrevious}
           disabled={currentIndex === 0}
           className={`
-            w-10 h-10 md:w-12 md:h-12 rounded-full shadow-lg transition-all duration-200 
+            w-10 h-10 md:w-11 md:h-11 rounded-full shadow-lg transition-all duration-200 
             flex items-center justify-center
             ${currentIndex === 0 
               ? 'bg-surface text-foreground-muted cursor-not-allowed' 
@@ -246,14 +257,14 @@ export default function FlashcardDetailScreen() {
           whileTap={currentIndex === 0 ? {} : { scale: 0.95 }}
           transition={{ type: "spring", stiffness: 500, damping: 25 }}
         >
-          <ChevronLeft className="w-6 h-6" />
+          <ChevronLeft className="w-5 h-5 md:w-6 md:h-6" />
         </motion.button>
 
         <motion.button
           onClick={handleNext}
           disabled={currentIndex === flashcards.length - 1}
           className={`
-            w-10 h-10 md:w-12 md:h-12 rounded-full shadow-lg transition-all duration-200 
+            w-10 h-10 md:w-11 md:h-11 rounded-full shadow-lg transition-all duration-200 
             flex items-center justify-center
             ${currentIndex === flashcards.length - 1
               ? 'bg-surface text-foreground-muted cursor-not-allowed' 
@@ -268,7 +279,7 @@ export default function FlashcardDetailScreen() {
           whileTap={currentIndex === flashcards.length - 1 ? {} : { scale: 0.95 }}
           transition={{ type: "spring", stiffness: 500, damping: 25 }}
         >
-          <ChevronRight className="w-6 h-6" />
+          <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
         </motion.button>
       </motion.div>
       </div>

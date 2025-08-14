@@ -3,7 +3,7 @@ export interface StudySet {
   userId: string
   projectId: string
   name: string
-  type: 'flashcard' | 'multiple_choice'
+  type: 'flashcard' | 'multiple_choice' | 'free_response'
   createdAt: string
   updatedAt: string
 }
@@ -22,6 +22,13 @@ export interface MultipleChoiceSet extends StudySet {
   notes: Note[]
 }
 
+export interface FreeResponseSet extends StudySet {
+  type: 'free_response'
+  freeResponses: FreeResponseQuestion[]
+  libraryItems: LibraryItem[]
+  notes: Note[]
+}
+
 export interface Flashcard {
   id: string
   term: string
@@ -32,6 +39,14 @@ export interface Flashcard {
 }
 
 export interface MultipleChoiceQuestion {
+  id: string
+  question: string
+  answer: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface FreeResponseQuestion {
   id: string
   question: string
   answer: string
@@ -54,7 +69,7 @@ export interface Note {
 
 export interface CreateStudySetRequest {
   name: string
-  type: 'flashcard' | 'multiple_choice'
+  type: 'flashcard' | 'multiple_choice' | 'free_response'
   projectId: string
   selectedNotes: string[]
   selectedLibraryItems: string[]
@@ -66,4 +81,22 @@ export interface StudySetProgress {
   status: 'queued' | 'processing' | 'completed' | 'failed'
   progress: number
   errorMessage?: string
+}
+
+export interface FreeResponseEvaluation {
+  id: string
+  freeResponseId: string
+  userId: string
+  userAnswer: string
+  score: number
+  isCorrect: boolean
+  feedback: string | null
+  keyPoints: string[]
+  improvements: string[]
+  createdAt: string
+  updatedAt: string
+}
+
+export interface EvaluateResponseRequest {
+  userAnswer: string
 }

@@ -141,46 +141,46 @@ export default function MultipleChoiceDetailScreen() {
   const getAnswerStyle = (answerLetter: string) => {
     if (!showResult) {
       return selectedAnswer === answerLetter 
-        ? 'bg-primary-orange border-primary-orange text-white' 
-        : 'bg-surface/30 border-divider/40 hover:border-primary-orange hover:bg-orange-50/20';
+        ? 'bg-blue-50/80 border-blue-200 text-blue-900' 
+        : 'bg-transparent border border-divider/20 text-foreground-secondary hover:border-divider/40 hover:bg-background-alt/30';
     }
     
     if (isCorrect(answerLetter)) {
-      return 'bg-green-100 border-green-500 text-green-800';
+      return 'bg-green-50/80 border-green-200 text-green-900';
     }
     
     if (selectedAnswer === answerLetter && !isCorrect(answerLetter)) {
-      return 'bg-red-100 border-red-500 text-red-800';
+      return 'bg-red-50/80 border-red-200 text-red-900';
     }
     
-    return 'bg-surface/20 border-divider/30 text-foreground-secondary';
+    return 'bg-transparent border border-divider/20 text-foreground-tertiary';
   };
   
   return (
-    <div className="flex flex-col h-screen overflow-hidden p-3 md:p-4">
-      {/* Back button */}
-      <div className="w-full flex justify-start mb-1 flex-shrink-0">
+    <div className="flex flex-col h-full overflow-hidden px-2 py-1 md:px-4 md:py-2 pb-4">
+      {/* Header with back button */}
+      <div className="w-full flex justify-start items-center mb-2 flex-shrink-0">
         <button
           onClick={handleBack}
-          className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm"
+          className="flex items-center gap-1 px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-xs"
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="w-3 h-3" />
           Back to Questions
         </button>
       </div>
 
-      {/* Content container - centered and constrained */}
-      <div className="flex flex-col items-center justify-start flex-1 min-h-0 py-1">
+      {/* Content container - properly constrained */}
+      <div className="flex flex-col items-center justify-center flex-1 min-h-0">
         {/* Progress indicator */}
-        <div className="mb-1 text-base md:text-lg font-bold text-foreground tracking-wider flex-shrink-0">
+        <div className="mb-4 text-base font-bold text-foreground tracking-wider flex-shrink-0">
           {currentIndex + 1} of {questions.length}
         </div>
 
-        {/* Question Card */}
-        <div className="w-full max-w-2xl flex-1 flex flex-col min-h-0">
-          <div key={currentIndex} className="flex flex-col">
+        {/* Question and Answers Container */}
+        <div className="w-full max-w-3xl flex-1 flex flex-col justify-center min-h-0">
+          <div key={currentIndex} className="flex flex-col justify-center space-y-4">
               {/* Question */}
-              <div className="bg-surface/50 rounded-2xl border border-divider/20 p-3 mb-4 flex-shrink-0">
+              <div className="text-center">
                 <h2 className="text-lg md:text-xl font-semibold text-foreground leading-tight">
                   {currentQuestion.question}
                 </h2>
@@ -192,19 +192,19 @@ export default function MultipleChoiceDetailScreen() {
                   <button
                     key={choice.letter}
                     onClick={() => handleAnswerSelect(choice.letter)}
-                    className={`w-full p-4 rounded-xl border-2 text-left ${getAnswerStyle(choice.letter)}`}
+                    className={`w-full p-3 md:p-4 rounded-xl text-left transition-all duration-200 ${getAnswerStyle(choice.letter)}`}
                     disabled={showResult}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-medium">
+                      <span className="font-medium text-sm md:text-base">
                         {choice.letter}. {choice.text}
                       </span>
                       {showResult && (
-                        <div className="flex-shrink-0 ml-2">
+                        <div className="flex-shrink-0 ml-4">
                           {isCorrect(choice.letter) ? (
-                            <Check className="w-5 h-5 text-green-600" />
+                            <Check className="w-4 h-4 text-green-600" />
                           ) : selectedAnswer === choice.letter ? (
-                            <X className="w-5 h-5 text-red-600" />
+                            <X className="w-4 h-4 text-red-600" />
                           ) : null}
                         </div>
                       )}
@@ -214,38 +214,38 @@ export default function MultipleChoiceDetailScreen() {
               </div>
 
               {/* Submit/Continue Button */}
-              <div className="mt-4 flex justify-center flex-shrink-0">
+              <div className="flex justify-center pt-2">
                 {!showResult ? (
                   <button
                     onClick={handleSubmitAnswer}
                     disabled={!selectedAnswer}
-                    className={`px-8 py-3 rounded-lg font-medium ${
+                    className={`px-6 py-2 rounded-xl font-medium transition-colors duration-200 ${
                       selectedAnswer 
-                        ? 'bg-primary-orange hover:bg-orange-600 text-white' 
-                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                        ? 'bg-primary-blue hover:bg-primary-blue/90 text-white' 
+                        : 'bg-background-alt text-foreground-muted cursor-not-allowed'
                     }`}
                   >
                     Submit Answer
                   </button>
                 ) : (
-                  <div className="flex flex-col items-center gap-2">
+                  <div className="flex flex-col items-center gap-3 w-full max-w-2xl">
                     {selectedAnswer && isCorrect(selectedAnswer) ? (
-                      <div className="flex items-center gap-2 text-green-600 font-medium">
+                      <div className="flex items-center gap-2 text-green-700 font-semibold text-lg">
                         <Check className="w-5 h-5" />
                         Correct!
                       </div>
                     ) : (
-                      <div className="flex items-center gap-2 text-red-600 font-medium">
+                      <div className="flex items-center gap-2 text-red-700 font-semibold text-lg">
                         <X className="w-5 h-5" />
                         Incorrect. The correct answer is {currentQuestion?.correctAnswer}.
                       </div>
                     )}
                     
-                    {/* Show explanation if available */}
+                    {/* Show explanation if available - Full display */}
                     {currentQuestion?.explanation && (
-                      <div className="bg-blue-50 border border-blue-200 rounded-xl p-2 max-w-md text-center">
-                        <h4 className="font-semibold text-blue-900 mb-1 text-sm">Explanation:</h4>
-                        <p className="text-blue-800 text-sm leading-tight">
+                      <div className="bg-blue-50/80 border border-blue-200 rounded-xl p-4 text-center w-full">
+                        <h4 className="font-semibold text-blue-900 mb-2 text-sm">Explanation:</h4>
+                        <p className="text-blue-800 text-sm leading-relaxed">
                           {currentQuestion.explanation}
                         </p>
                       </div>
@@ -253,38 +253,40 @@ export default function MultipleChoiceDetailScreen() {
                   </div>
                 )}
               </div>
-              
-              {/* Navigation */}
-              <div className="flex items-center justify-center gap-6 mt-3 flex-shrink-0">
-                <button
-                  onClick={handlePrevious}
-                  disabled={currentIndex === 0}
-                  className={`
-                    w-10 h-10 md:w-12 md:h-12 rounded-full shadow-lg flex items-center justify-center
-                    ${currentIndex === 0 
-                      ? 'bg-surface text-foreground-muted cursor-not-allowed' 
-                      : 'bg-surface/50 border border-divider/30 text-gray-700 hover:bg-surface/80'
-                    }
-                  `}
-                >
-                  <ChevronLeft className="w-6 h-6" />
-                </button>
-
-                <button
-                  onClick={handleNext}
-                  disabled={currentIndex === questions.length - 1}
-                  className={`
-                    w-10 h-10 md:w-12 md:h-12 rounded-full shadow-lg flex items-center justify-center
-                    ${currentIndex === questions.length - 1
-                      ? 'bg-surface text-foreground-muted cursor-not-allowed' 
-                      : 'bg-surface/50 border border-divider/30 text-gray-700 hover:bg-surface/80'
-                    }
-                  `}
-                >
-                  <ChevronRight className="w-6 h-6" />
-                </button>
-              </div>
             </div>
+        </div>
+        
+        {/* Navigation - Positioned lower with more space */}
+        <div className="flex items-center justify-center gap-6 mt-8 mb-4 flex-shrink-0">
+          <button
+            onClick={handlePrevious}
+            disabled={currentIndex === 0}
+            className={`
+              w-12 h-12 rounded-full shadow-lg transition-all duration-200 
+              flex items-center justify-center
+              ${currentIndex === 0 
+                ? 'bg-background-alt text-foreground-muted cursor-not-allowed' 
+                : 'bg-background-alt border border-divider/30 text-foreground-secondary hover:bg-background-alt-hover hover:border-divider/50'
+              }
+            `}
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+
+          <button
+            onClick={handleNext}
+            disabled={currentIndex === questions.length - 1}
+            className={`
+              w-12 h-12 rounded-full shadow-lg transition-all duration-200 
+              flex items-center justify-center
+              ${currentIndex === questions.length - 1
+                ? 'bg-background-alt text-foreground-muted cursor-not-allowed' 
+                : 'bg-background-alt border border-divider/30 text-foreground-secondary hover:bg-background-alt-hover hover:border-divider/50'
+              }
+            `}
+          >
+            <ChevronRight className="w-6 h-6" />
+          </button>
         </div>
       </div>
     </div>

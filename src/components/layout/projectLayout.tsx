@@ -11,6 +11,7 @@ import { useProjectLibraryItems, useAddLibraryItemToNote, useRemoveLibraryItemFr
 import { useCreateFlashcards } from '../../hooks/flashcard';
 import useViewStore from '../../store/slices/viewSlice';
 import AddLibraryItemModal from '@/components/modals/AddLibraryItemModal';
+import DateTimePickerModal from '@/components/modals/DateTimePickerModal';
 
 const ProjectLayout = () => {
   const { projectId, noteId } = useParams<{ projectId: string; noteId?: string }>();
@@ -71,6 +72,7 @@ const ProjectLayout = () => {
     if (!activeNoteId) return;
     removeLibraryItemMutation.mutate({ noteId: activeNoteId, libraryItemId });
   };
+
 
   const handleFlashcardModalConfirm = useCallback((selectedItems: string[], includeNoteContent: boolean) => {
     if (!activeNoteId) return;
@@ -261,6 +263,10 @@ const ProjectLayout = () => {
         onAddItem={handleAddLibraryItem}
         onRemoveItem={handleRemoveLibraryItem}
       />
+
+      {/* DateTimePicker Modal - Global modal for date/time selection */}
+      <DateTimePickerModal />
+
     </div>
   );
 };

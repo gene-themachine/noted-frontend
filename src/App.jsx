@@ -21,8 +21,12 @@ import FlashcardSetScreen from './screens/studySets/FlashcardSetScreen';
 import FlashcardDetailScreen from './screens/studySets/FlashcardDetailScreen';
 import MultipleChoiceSetScreen from './screens/studySets/MultipleChoiceSetScreen';
 import MultipleChoiceDetailScreen from './screens/studySets/MultipleChoiceDetailScreen';
+import FreeResponseSetScreen from './screens/studySets/FreeResponseSetScreen';
+import FreeResponseDetailScreen from './screens/studySets/FreeResponseDetailScreen';
 import StarredFlashcardsScreen from './screens/studySets/StarredFlashcardsScreen';
 import StarredFlashcardsDetailScreen from './screens/studySets/StarredFlashcardsDetailScreen';
+import StarredMultipleChoiceScreen from './screens/studySets/StarredMultipleChoiceScreen';
+import StarredMultipleChoiceDetailScreen from './screens/studySets/StarredMultipleChoiceDetailScreen';
 function App() {
   useEffect(() => {
     // Load fonts programmatically as a fallback
@@ -54,9 +58,15 @@ function App() {
           <Route path="study-sets/multiple-choice/:setId" element={<MultipleChoiceSetScreen />} />
           <Route path="study-sets/multiple-choice/:setId/study" element={<MultipleChoiceDetailScreen />} />
           <Route path="study-sets/multiple-choice/:setId/study/:questionId" element={<MultipleChoiceDetailScreen />} />
+          <Route path="study-sets/free-response/:setId" element={<FreeResponseSetScreen />} />
+          <Route path="study-sets/free-response/:setId/study" element={<FreeResponseDetailScreen />} />
+          <Route path="study-sets/free-response/:setId/study/:questionId" element={<FreeResponseDetailScreen />} />
           <Route path="starred-flashcards" element={<StarredFlashcardsScreen />} />
           <Route path="starred-flashcards/study" element={<StarredFlashcardsDetailScreen />} />
           <Route path="starred-flashcards/study/:cardId" element={<StarredFlashcardsDetailScreen />} />
+          <Route path="starred-multiple-choice-questions" element={<StarredMultipleChoiceScreen />} />
+          <Route path="starred-multiple-choice-questions/study" element={<StarredMultipleChoiceDetailScreen />} />
+          <Route path="starred-multiple-choice-questions/study/:questionId" element={<StarredMultipleChoiceDetailScreen />} />
           <Route path="note/:noteId" element={<NoteScreen />} />
           <Route path="note/:noteId/free-response" element={<FreeResponseScreen />} />
           

@@ -81,3 +81,19 @@ export const deleteProjectMultipleChoiceSet = async (setId: string) => {
   const response = await api.delete(`/study-sets/multiple-choice/${setId}`)
   return response.data
 }
+
+// Starred multiple choice questions functionality
+export const getProjectStarredMultipleChoiceQuestions = async (projectId: string) => {
+  const response = await api.get(`/projects/${projectId}/starred-multiple-choice-questions`)
+  return response.data
+}
+
+export const starMultipleChoiceQuestion = async (projectId: string, questionId: string) => {
+  const response = await api.post(`/projects/${projectId}/multiple-choice-questions/${questionId}/star`)
+  return response.data
+}
+
+export const unstarMultipleChoiceQuestion = async (projectId: string, questionId: string) => {
+  const response = await api.delete(`/projects/${projectId}/multiple-choice-questions/${questionId}/star`)
+  return response.data
+}

@@ -201,15 +201,25 @@ export interface UseOptimizedSSEReturn {
 // UI Component Types
 export type RightBarView = 'todos' | 'note';
 
+export interface DateTimePickerState {
+  isOpen: boolean;
+  onConfirm?: (value: string) => void;
+  initialValue?: string;
+  placeholder?: string;
+}
+
 export interface ViewState {
   activeNoteId: string | null;
   rightBarView: RightBarView;
   isFlashcardModalOpen: boolean;
+  dateTimePickerState: DateTimePickerState;
   showNote: (noteId: string) => void;
   hideNote: () => void;
   setRightBarView: (view: RightBarView) => void;
   openFlashcardModal: () => void;
   closeFlashcardModal: () => void;
+  openDateTimePicker: (options: Omit<DateTimePickerState, 'isOpen'>) => void;
+  closeDateTimePicker: () => void;
 }
 
 // Multiple Choice Question Parsing Types

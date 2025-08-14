@@ -2,9 +2,12 @@ import React, { useState } from 'react';
 import NoteRightBar from '../rightBar/noteRightBar';
 import TodoListRightBar from '../rightBar/todoListRightBar';
 import Notification from '../rightBar/notification';
+import { useTodos } from '../../hooks/todo';
 
 const RightBar = () => {
   const [activeView, setActiveView] = useState('notifications'); // 'todos', 'note', or 'notifications'
+  const { data: todos } = useTodos();
+  const todoCount = todos?.length || 0;
 
   return (
     <div className="flex flex-col h-full text-foreground">
@@ -30,7 +33,14 @@ const RightBar = () => {
                   : 'text-foreground-secondary hover:bg-surface-pressed'
               }`}
             >
-              Todos
+              <span className="flex items-center gap-2">
+                Todos
+                {todoCount > 0 && (
+                  <span className="inline-flex items-center justify-center w-4 h-4 text-[10px] font-medium text-white bg-primary-blue rounded-full">
+                    {todoCount > 99 ? '99+' : todoCount}
+                  </span>
+                )}
+              </span>
             </button>
             <button
               onClick={() => setActiveView('note')}
