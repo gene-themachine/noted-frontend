@@ -62,7 +62,7 @@ export const getProjectFreeResponseSets = async (projectId: string) => {
 
 export const getProjectFreeResponseSet = async (setId: string) => {
   const response = await api.get(`/study-sets/free-response/${setId}`)
-  const data = response.data
+  const data = response.data.data || response.data // Extract from nested response structure
   
   // Ensure consistent data structure
   if (data && data.freeResponses && !data.questions) {
@@ -77,6 +77,11 @@ export const createProjectFreeResponseSet = async (projectId: string, payload: O
   return response.data
 }
 
+export const updateProjectFreeResponseSet = async (setId: string, payload: { name: string }) => {
+  const response = await api.put(`/study-sets/free-response/${setId}`, payload)
+  return response.data
+}
+
 export const deleteProjectFreeResponseSet = async (setId: string) => {
   const response = await api.delete(`/study-sets/free-response/${setId}`)
   return response.data
@@ -84,8 +89,15 @@ export const deleteProjectFreeResponseSet = async (setId: string) => {
 
 // Free response evaluation functionality
 export const evaluateFreeResponse = async (questionId: string, payload: EvaluateResponseRequest): Promise<FreeResponseEvaluation> => {
+  console.log('🔍 Sending evaluation request:', { questionId, payload });
   const response = await api.post(`/free-response/${questionId}/evaluate`, payload);
-  return response.data;
+  console.log('🔍 Raw API response:', response.data);
+  
+  // Handle nested response structure - try both patterns
+  const evaluation = response.data.data || response.data;
+  console.log('🔍 Extracted evaluation:', evaluation);
+  
+  return evaluation;
 };
 
 export const getFreeResponseEvaluationHistory = async (questionId: string): Promise<FreeResponseEvaluation[]> => {

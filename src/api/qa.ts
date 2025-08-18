@@ -1,4 +1,5 @@
 import { api } from './apiUtils';
+import { SERVER_URL } from '../utils/constants';
 
 export interface GenerateQAPayload {
   noteId: string;
@@ -46,7 +47,8 @@ export const streamQA = (
   const token = localStorage.getItem('authToken');
   
   // Create EventSource with all parameters in query string
-  const url = new URL(`${import.meta.env.VITE_API_URL}/notes/${payload.noteId}/qa/stream`);
+  const baseUrl = SERVER_URL.replace(/\/+$/, '');
+  const url = new URL(`${baseUrl}/notes/${payload.noteId}/qa/stream`);
   url.searchParams.set('auth_token', token || '');
   url.searchParams.set('qaBlockId', payload.qaBlockId);
   url.searchParams.set('question', payload.question);

@@ -1,8 +1,11 @@
 import { useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Brain, Play, RefreshCw, Paperclip, ChevronDown, ChevronUp, FileText, ArrowLeft, Target } from 'lucide-react';
-import { useMultipleChoiceSet } from '../../hooks/studySets';
+import { useMultipleChoiceSet, useUpdateMultipleChoiceSet, useDeleteStudySet } from '../../hooks/studySets';
 import { Button } from '../../components/ui/button';
+import { StudySetDropdownMenu } from '../../components/ui/StudySetDropdownMenu';
+import { RenameStudySetModal } from '../../components/ui/RenameStudySetModal';
+import { DeleteConfirmationModal } from '../../components/ui/DeleteConfirmationModal';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function MultipleChoiceSetScreen() {
@@ -10,8 +13,12 @@ export default function MultipleChoiceSetScreen() {
   const navigate = useNavigate();
   
   const { data: multipleChoiceSet, isLoading, error } = useMultipleChoiceSet(setId || null);
+  const updateMultipleChoiceSetMutation = useUpdateMultipleChoiceSet();
+  const deleteStudySetMutation = useDeleteStudySet();
   
   const [showAttachedFiles, setShowAttachedFiles] = useState(false);
+  const [showRenameModal, setShowRenameModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const questions = useMemo(() => multipleChoiceSet?.questions || [], [multipleChoiceSet]);
   
@@ -22,6 +29,35 @@ export default function MultipleChoiceSetScreen() {
 
   const handleBack = () => {
     navigate(`/project/${projectId}/tools`);
+  };
+
+  const handleRename = async (newName: string) => {
+    if (!setId) return;
+    
+    try {
+      await updateMultipleChoiceSetMutation.mutateAsync({
+        setId,
+        payload: { name: newName }
+      });
+      setShowRenameModal(false);
+    } catch (error) {
+      console.error('Failed to rename multiple choice set:', error);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!setId) return;
+    
+    try {
+      await deleteStudySetMutation.mutateAsync({
+        setId,
+        type: 'multiple_choice'
+      });
+      setShowDeleteModal(false);
+      navigate(`/project/${projectId}/tools`);
+    } catch (error) {
+      console.error('Failed to delete multiple choice set:', error);
+    }
   };
   
   if (isLoading) {
@@ -67,10 +103,19 @@ export default function MultipleChoiceSetScreen() {
           <span>Back to Tools</span>
         </button>
         
-        <h1 className="text-xl font-semibold text-foreground mb-2">Multiple Choice Quiz</h1>
-        <p className="text-sm text-gray-500">
-          {multipleChoiceSet.name}
-        </p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-xl font-semibold text-foreground mb-2">Multiple Choice Quiz</h1>
+            <p className="text-sm text-gray-500">
+              {multipleChoiceSet.name}
+            </p>
+          </div>
+          
+          <StudySetDropdownMenu
+            onRename={() => setShowRenameModal(true)}
+            onDelete={() => setShowDeleteModal(true)}
+          />
+        </div>
       </div>
 
       {multipleChoiceLibraryItems.length > 0 && (
@@ -191,6 +236,25 @@ export default function MultipleChoiceSetScreen() {
           </div>
         </div>
       )}
+
+      {/* Modals */}
+      <RenameStudySetModal
+        isOpen={showRenameModal}
+        onClose={() => setShowRenameModal(false)}
+        onRename={handleRename}
+        currentName={multipleChoiceSet?.name || ''}
+        setType="multiple_choice"
+        isLoading={updateMultipleChoiceSetMutation.isPending}
+      />
+
+      <DeleteConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleDelete}
+        title="Delete Multiple Choice Set"
+        message={`Are you sure you want to delete "${multipleChoiceSet?.name}"? This action cannot be undone and will permanently remove all ${questions.length} questions.`}
+        isLoading={deleteStudySetMutation.isPending}
+      />
     </div>
   );
 }

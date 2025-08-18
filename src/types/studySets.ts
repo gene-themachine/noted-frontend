@@ -50,6 +50,10 @@ export interface FreeResponseQuestion {
   id: string
   question: string
   answer: string
+  rubric: Array<{
+    criterion: string
+    points: number
+  }>
   createdAt: string
   updatedAt: string
 }
@@ -93,6 +97,15 @@ export interface FreeResponseEvaluation {
   feedback: string | null
   keyPoints: string[]
   improvements: string[]
+  criteriaScores: Array<{
+    criterion: string
+    pointsEarned: number
+    pointsPossible: number
+    feedback: string
+  }>
+  overallFeedback: string | null
+  keyStrengths: string[]
+  areasForImprovement: string[]
   createdAt: string
   updatedAt: string
 }

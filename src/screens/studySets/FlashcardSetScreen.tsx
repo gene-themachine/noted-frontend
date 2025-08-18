@@ -1,8 +1,11 @@
 import { useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { BookOpen, Play, RefreshCw, ArrowLeft, Paperclip, ChevronDown, ChevronUp, FileText } from 'lucide-react';
-import { useFlashcardSet } from '../../hooks/studySets';
+import { useFlashcardSet, useUpdateFlashcardSet, useDeleteStudySet } from '../../hooks/studySets';
 import { Button } from '../../components/ui/button';
+import { StudySetDropdownMenu } from '../../components/ui/StudySetDropdownMenu';
+import { RenameStudySetModal } from '../../components/ui/RenameStudySetModal';
+import { DeleteConfirmationModal } from '../../components/ui/DeleteConfirmationModal';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function FlashcardSetScreen() {
@@ -10,8 +13,12 @@ export default function FlashcardSetScreen() {
   const navigate = useNavigate();
   
   const { data: flashcardSet, isLoading, error } = useFlashcardSet(setId || null);
+  const updateFlashcardSetMutation = useUpdateFlashcardSet();
+  const deleteStudySetMutation = useDeleteStudySet();
   
   const [showAttachedFiles, setShowAttachedFiles] = useState(false);
+  const [showRenameModal, setShowRenameModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const flashcards = useMemo(() => flashcardSet?.flashcards || [], [flashcardSet]);
   
@@ -22,6 +29,35 @@ export default function FlashcardSetScreen() {
 
   const handleBack = () => {
     navigate(`/project/${projectId}/tools`);
+  };
+
+  const handleRename = async (newName: string) => {
+    if (!setId) return;
+    
+    try {
+      await updateFlashcardSetMutation.mutateAsync({
+        setId,
+        payload: { name: newName }
+      });
+      setShowRenameModal(false);
+    } catch (error) {
+      console.error('Failed to rename flashcard set:', error);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!setId) return;
+    
+    try {
+      await deleteStudySetMutation.mutateAsync({
+        setId,
+        type: 'flashcard'
+      });
+      setShowDeleteModal(false);
+      navigate(`/project/${projectId}/tools`);
+    } catch (error) {
+      console.error('Failed to delete flashcard set:', error);
+    }
   };
   
   if (isLoading) {
@@ -67,10 +103,19 @@ export default function FlashcardSetScreen() {
           <span>Back to Tools</span>
         </button>
         
-        <h1 className="text-xl font-semibold text-foreground mb-2">Flashcards</h1>
-        <p className="text-sm text-gray-500">
-          {flashcardSet.name}
-        </p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-xl font-semibold text-foreground mb-2">Flashcards</h1>
+            <p className="text-sm text-gray-500">
+              {flashcardSet.name}
+            </p>
+          </div>
+          
+          <StudySetDropdownMenu
+            onRename={() => setShowRenameModal(true)}
+            onDelete={() => setShowDeleteModal(true)}
+          />
+        </div>
       </div>
 
       {flashcardLibraryItems.length > 0 && (
@@ -182,6 +227,25 @@ export default function FlashcardSetScreen() {
           </div>
         </div>
       )}
+
+      {/* Modals */}
+      <RenameStudySetModal
+        isOpen={showRenameModal}
+        onClose={() => setShowRenameModal(false)}
+        onRename={handleRename}
+        currentName={flashcardSet?.name || ''}
+        setType="flashcard"
+        isLoading={updateFlashcardSetMutation.isPending}
+      />
+
+      <DeleteConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleDelete}
+        title="Delete Flashcard Set"
+        message={`Are you sure you want to delete "${flashcardSet?.name}"? This action cannot be undone and will permanently remove all ${flashcards.length} flashcards.`}
+        isLoading={deleteStudySetMutation.isPending}
+      />
     </div>
   );
 }

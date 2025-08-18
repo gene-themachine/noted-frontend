@@ -5,6 +5,7 @@ import {
   getProjectFlashcardSets, 
   getFlashcardSet, 
   createProjectFlashcardSet,
+  updateProjectFlashcardSet,
   deleteFlashcardSet,
   getProjectStarredFlashcards,
   starFlashcard,
@@ -14,6 +15,7 @@ import {
   getProjectMultipleChoiceSets, 
   getProjectMultipleChoiceSet, 
   createProjectMultipleChoiceSet,
+  updateProjectMultipleChoiceSet,
   deleteProjectMultipleChoiceSet,
   getProjectStarredMultipleChoiceQuestions,
   starMultipleChoiceQuestion,
@@ -23,6 +25,7 @@ import {
   getProjectFreeResponseSets,
   getProjectFreeResponseSet,
   createProjectFreeResponseSet,
+  updateProjectFreeResponseSet,
   deleteProjectFreeResponseSet,
   evaluateFreeResponse,
   getFreeResponseEvaluationHistory,
@@ -241,6 +244,67 @@ export const useCreateFreeResponseSet = () => {
   })
 }
 
+// Update study set hooks
+export const useUpdateFlashcardSet = () => {
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: ({ setId, payload }: { setId: string; payload: { name: string } }) => {
+      return updateProjectFlashcardSet(setId, payload)
+    },
+    onSuccess: (data, variables) => {
+      toast.success('Flashcard set updated successfully')
+      // Invalidate queries to refresh the data
+      queryClient.invalidateQueries({ queryKey: ['flashcard-set', variables.setId] })
+      queryClient.invalidateQueries({ queryKey: ['flashcard-sets'] })
+    },
+    onError: (error: any) => {
+      console.error('Error updating flashcard set:', error)
+      toast.error('Failed to update flashcard set')
+    },
+  })
+}
+
+export const useUpdateMultipleChoiceSet = () => {
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: ({ setId, payload }: { setId: string; payload: { name: string } }) => {
+      return updateProjectMultipleChoiceSet(setId, payload)
+    },
+    onSuccess: (data, variables) => {
+      toast.success('Multiple choice set updated successfully')
+      // Invalidate queries to refresh the data
+      queryClient.invalidateQueries({ queryKey: ['multiple-choice-set', variables.setId] })
+      queryClient.invalidateQueries({ queryKey: ['multiple-choice-sets'] })
+    },
+    onError: (error: any) => {
+      console.error('Error updating multiple choice set:', error)
+      toast.error('Failed to update multiple choice set')
+    },
+  })
+}
+
+export const useUpdateFreeResponseSet = () => {
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: ({ setId, payload }: { setId: string; payload: { name: string } }) => {
+      return updateProjectFreeResponseSet(setId, payload)
+    },
+    onSuccess: (data, variables) => {
+      toast.success('Free response set updated successfully')
+      // Invalidate queries to refresh the data
+      queryClient.invalidateQueries({ queryKey: ['free-response-set', variables.setId] })
+      queryClient.invalidateQueries({ queryKey: ['free-response-sets'] })
+    },
+    onError: (error: any) => {
+      console.error('Error updating free response set:', error)
+      toast.error('Failed to update free response set')
+    },
+  })
+}
+
 // Delete a study set
 export const useDeleteStudySet = () => {
   const queryClient = useQueryClient()
@@ -411,9 +475,12 @@ export const useEvaluateFreeResponse = () => {
   
   return useMutation({
     mutationFn: ({ questionId, payload }: { questionId: string; payload: EvaluateResponseRequest }) => {
+      console.log('🔍 Hook: Starting evaluation mutation', { questionId, payload });
       return evaluateFreeResponse(questionId, payload)
     },
     onSuccess: (data, variables) => {
+      console.log('🔍 Hook: Mutation success', { data, variables });
+      
       // Invalidate evaluation history for this question
       queryClient.invalidateQueries({ 
         queryKey: ['free-response-evaluations', variables.questionId] 
@@ -421,13 +488,13 @@ export const useEvaluateFreeResponse = () => {
       
       // Show feedback to user
       if (data.isCorrect) {
-        toast.success(`Correct! Score: ${data.score}/100`)
+        toast.success(`Correct! Score: ${data.score}%`)
       } else {
-        toast.success(`Score: ${data.score}/100. Check feedback for improvements.`)
+        toast.success(`Score: ${data.score}%. Check feedback for improvements.`)
       }
     },
     onError: (error: any) => {
-      console.error('Error evaluating free response:', error)
+      console.error('🔍 Hook: Mutation error:', error)
       toast.error('Failed to evaluate response')
     },
   })

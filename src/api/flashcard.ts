@@ -43,6 +43,11 @@ export const createProjectFlashcardSet = async (projectId: string, payload: Omit
   return response.data
 }
 
+export const updateProjectFlashcardSet = async (setId: string, payload: { name: string }) => {
+  const response = await api.put(`/study-sets/flashcards/${setId}`, payload)
+  return response.data
+}
+
 export const deleteFlashcardSet = async (setId: string) => {
   const response = await api.delete(`/study-sets/flashcards/${setId}`)
   return response.data

@@ -77,6 +77,11 @@ export const createProjectMultipleChoiceSet = async (projectId: string, payload:
   return response.data
 }
 
+export const updateProjectMultipleChoiceSet = async (setId: string, payload: { name: string }) => {
+  const response = await api.put(`/study-sets/multiple-choice/${setId}`, payload)
+  return response.data
+}
+
 export const deleteProjectMultipleChoiceSet = async (setId: string) => {
   const response = await api.delete(`/study-sets/multiple-choice/${setId}`)
   return response.data

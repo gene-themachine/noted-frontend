@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, ArrowLeft, Send, Check, AlertCircle, Clock, Star } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ArrowLeft, Send, Check, X, AlertCircle, Clock, Eye, EyeOff } from 'lucide-react';
 import { useFreeResponseSet, useEvaluateFreeResponse, useFreeResponseEvaluationHistory } from '../../hooks/studySets';
 import { FreeResponseEvaluation } from '../../types/studySets';
 import { Button } from '../../components/ui/button';
@@ -16,7 +16,7 @@ export default function FreeResponseDetailScreen() {
   
   const [userAnswer, setUserAnswer] = useState('');
   const [currentEvaluation, setCurrentEvaluation] = useState<FreeResponseEvaluation | null>(null);
-  const [showHistory, setShowHistory] = useState(false);
+  const [showModelAnswer, setShowModelAnswer] = useState(false);
 
   const questions = useMemo(() => freeResponseSet?.questions || [], [freeResponseSet]);
   
@@ -51,21 +51,40 @@ export default function FreeResponseDetailScreen() {
   const resetQuestion = () => {
     setUserAnswer('');
     setCurrentEvaluation(null);
-    setShowHistory(false);
+    setShowModelAnswer(false);
   };
   
   const handleSubmitAnswer = async () => {
-    if (!userAnswer.trim() || !questionId) return;
+    // Get questionId from URL params or fall back to current question's ID
+    const effectiveQuestionId = questionId || currentQuestion?.id;
+    
+    if (!userAnswer.trim() || !effectiveQuestionId) {
+      console.log('🔍 Submit: Missing answer or questionId', { 
+        userAnswer: userAnswer.trim(), 
+        urlQuestionId: questionId, 
+        currentQuestionId: currentQuestion?.id,
+        effectiveQuestionId 
+      });
+      return;
+    }
+    
+    console.log('🔍 Submit: Starting evaluation', { 
+      effectiveQuestionId, 
+      urlQuestionId: questionId,
+      currentQuestionId: currentQuestion?.id,
+      userAnswer: userAnswer.trim() 
+    });
     
     try {
       const evaluation = await evaluateFreeResponseMutation.mutateAsync({
-        questionId,
+        questionId: effectiveQuestionId,
         payload: { userAnswer: userAnswer.trim() }
       });
       
+      console.log('🔍 Submit: Evaluation received', evaluation);
       setCurrentEvaluation(evaluation);
     } catch (error) {
-      console.error('Failed to evaluate response:', error);
+      console.error('🔍 Submit: Failed to evaluate response:', error);
     }
   };
 
@@ -91,22 +110,19 @@ export default function FreeResponseDetailScreen() {
     );
   }
 
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-700';
-    if (score >= 60) return 'text-yellow-600';
-    return 'text-red-600';
-  };
-
-  const getScoreBgColor = (score: number) => {
-    if (score >= 80) return 'bg-green-50 border-green-200';
-    if (score >= 60) return 'bg-yellow-50 border-yellow-200';
-    return 'bg-red-50 border-red-200';
+  // Scoring with appropriate colors
+  const getScoreDisplay = (score: number) => {
+    const isGood = score >= 80;
+    return {
+      icon: isGood ? <Check className="w-5 h-5 text-primary-green" /> : <AlertCircle className="w-5 h-5 text-yellow-600" />,
+      textColor: isGood ? 'text-primary-green' : 'text-yellow-600'
+    };
   };
   
   return (
     <div className="flex flex-col h-full overflow-hidden px-2 py-1 md:px-4 md:py-2 pb-4">
-      {/* Header with back button and history toggle */}
-      <div className="w-full flex justify-between items-center mb-2 flex-shrink-0">
+      {/* Header with back button */}
+      <div className="w-full flex justify-start items-center mb-2 flex-shrink-0">
         <button
           onClick={handleBack}
           className="flex items-center gap-1 px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-xs"
@@ -114,16 +130,6 @@ export default function FreeResponseDetailScreen() {
           <ArrowLeft className="w-3 h-3" />
           Back to Questions
         </button>
-        
-        {evaluationHistory && evaluationHistory.length > 0 && (
-          <button
-            onClick={() => setShowHistory(!showHistory)}
-            className="flex items-center gap-1 px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-colors text-xs"
-          >
-            <Clock className="w-3 h-3" />
-            History ({evaluationHistory.length})
-          </button>
-        )}
       </div>
 
       {/* Content container - properly constrained */}
@@ -134,169 +140,155 @@ export default function FreeResponseDetailScreen() {
         </div>
 
         {/* Question and Answer Container */}
-        <div className="w-full max-w-4xl flex-1 flex flex-col justify-center min-h-0">
-          <div key={currentIndex} className="flex flex-col justify-center space-y-6">
+        <div className="w-full max-w-3xl flex-1 flex flex-col justify-center min-h-0">
+          <div key={currentIndex} className="flex flex-col justify-center space-y-4">
             {/* Question */}
             <div className="text-center">
-              <h2 className="text-lg md:text-xl font-semibold text-foreground leading-tight mb-4">
+              <h2 className="text-lg md:text-xl font-semibold text-foreground leading-tight">
                 {currentQuestion.question}
               </h2>
-              
-              {/* Model Answer (collapsed by default) */}
-              <details className="text-left bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <summary className="cursor-pointer text-blue-700 font-medium text-sm">
-                  View Model Answer
-                </summary>
-                <p className="mt-2 text-blue-800 text-sm leading-relaxed">
-                  {currentQuestion.answer}
-                </p>
-              </details>
             </div>
 
-            {/* Answer Input */}
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Your Response:
-                </label>
-                <textarea
-                  value={userAnswer}
-                  onChange={(e) => setUserAnswer(e.target.value)}
-                  placeholder="Type your detailed response here..."
-                  className="w-full h-32 p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
-                  disabled={!!currentEvaluation}
-                />
-              </div>
+            {/* Rubric hidden - only shown after evaluation */}
 
-              {/* Submit Button */}
-              {!currentEvaluation && (
-                <div className="flex justify-center">
-                  <Button
+            {/* Answer Input */}
+            <div className="space-y-3">
+              <textarea
+                value={userAnswer}
+                onChange={(e) => setUserAnswer(e.target.value)}
+                placeholder="Type your detailed response here..."
+                className="w-full h-32 p-3 md:p-4 border border-gray-300 rounded-xl resize-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm md:text-base transition-all duration-200"
+                disabled={!!currentEvaluation}
+              />
+
+              {/* Submit/Continue Button */}
+              <div className="flex justify-center pt-2">
+                {!currentEvaluation ? (
+                  <button
                     onClick={handleSubmitAnswer}
                     disabled={!userAnswer.trim() || evaluateFreeResponseMutation.isPending}
-                    className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-6 py-2"
+                    className={`px-6 py-2 rounded-xl font-medium transition-colors duration-200 ${
+                      userAnswer.trim() && !evaluateFreeResponseMutation.isPending
+                        ? 'bg-primary-green text-white hover:bg-green-600' 
+                        : 'bg-background-alt text-foreground-muted cursor-not-allowed border border-divider/20'
+                    }`}
                   >
                     {evaluateFreeResponseMutation.isPending ? (
                       <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline mr-2" />
                         Evaluating...
                       </>
                     ) : (
-                      <>
-                        <Send className="w-4 h-4" />
-                        Submit Response
-                      </>
+                      'Submit Response'
                     )}
-                  </Button>
-                </div>
-              )}
-
-              {/* Evaluation Results */}
-              <AnimatePresence>
-                {currentEvaluation && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="space-y-4"
-                  >
-                    {/* Score */}
-                    <div className={`border rounded-lg p-4 ${getScoreBgColor(currentEvaluation.score)}`}>
-                      <div className="flex items-center gap-3 mb-3">
-                        {currentEvaluation.isCorrect ? (
-                          <Check className="w-5 h-5 text-green-600" />
-                        ) : (
-                          <AlertCircle className="w-5 h-5 text-yellow-600" />
-                        )}
-                        <div>
-                          <div className={`text-lg font-bold ${getScoreColor(currentEvaluation.score)}`}>
-                            Score: {currentEvaluation.score}/100
-                          </div>
-                          <div className="text-sm text-gray-600">
-                            {currentEvaluation.isCorrect ? 'Excellent response!' : 'Good effort! See feedback below.'}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Feedback */}
-                      {currentEvaluation.feedback && (
-                        <div className="mt-3">
-                          <h4 className="font-semibold text-gray-800 mb-2 text-sm">Feedback:</h4>
-                          <p className="text-gray-700 text-sm leading-relaxed">
-                            {currentEvaluation.feedback}
+                  </button>
+                ) : (
+                  <div className="flex flex-col items-center gap-4 w-full">
+                    {/* Score Display */}
+                    <div className={`flex items-center gap-2 font-semibold text-lg ${getScoreDisplay(currentEvaluation.score).textColor}`}>
+                      {getScoreDisplay(currentEvaluation.score).icon}
+                      Score: {currentEvaluation.score}%
+                    </div>
+                    
+                    {/* Results Panel */}
+                    <div className="w-full max-w-2xl border border-divider/20 rounded-xl p-4">
+                      
+                      {/* Overall Feedback */}
+                      {currentEvaluation.overallFeedback && (
+                        <div className="mb-4">
+                          <h4 className="font-semibold text-foreground mb-2 text-sm">Feedback:</h4>
+                          <p className="text-foreground-secondary text-sm leading-relaxed">
+                            {currentEvaluation.overallFeedback}
                           </p>
                         </div>
                       )}
 
-                      {/* Key Points */}
-                      {currentEvaluation.keyPoints.length > 0 && (
-                        <div className="mt-3">
-                          <h4 className="font-semibold text-gray-800 mb-2 text-sm">Key Points Covered:</h4>
-                          <ul className="list-disc list-inside text-gray-700 text-sm space-y-1">
-                            {currentEvaluation.keyPoints.map((point, index) => (
-                              <li key={index}>{point}</li>
+                      {/* Criteria Breakdown */}
+                      {currentEvaluation.criteriaScores && currentEvaluation.criteriaScores.length > 0 && (
+                        <div className="mb-4">
+                          <h4 className="font-semibold text-foreground mb-2 text-sm">Grading Criteria:</h4>
+                          <div className="space-y-2">
+                            {currentEvaluation.criteriaScores.map((criterion, index) => (
+                              <div key={index} className="border border-divider/10 rounded p-2">
+                                <div className="flex justify-between items-center mb-1">
+                                  <span className="font-medium text-xs text-foreground">{criterion.criterion}</span>
+                                  <span className={`text-xs font-semibold ${criterion.pointsEarned > 0 ? 'text-green-600' : 'text-yellow-600'}`}>
+                                    {criterion.pointsEarned > 0 ? '✓ Met' : '✗ Not Met'}
+                                  </span>
+                                </div>
+                                <p className="text-xs text-foreground-secondary">{criterion.feedback}</p>
+                              </div>
                             ))}
-                          </ul>
+                          </div>
                         </div>
                       )}
 
-                      {/* Improvements */}
-                      {currentEvaluation.improvements.length > 0 && (
-                        <div className="mt-3">
-                          <h4 className="font-semibold text-gray-800 mb-2 text-sm">Areas for Improvement:</h4>
-                          <ul className="list-disc list-inside text-gray-700 text-sm space-y-1">
-                            {currentEvaluation.improvements.map((improvement, index) => (
-                              <li key={index}>{improvement}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
+                      {/* Strengths and Improvements */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {currentEvaluation.keyStrengths && currentEvaluation.keyStrengths.length > 0 && (
+                          <div>
+                            <h4 className="font-semibold text-green-700 mb-2 text-sm flex items-center gap-1">
+                              <Check className="w-3 h-3" />
+                              Strengths:
+                            </h4>
+                            <ul className="list-disc list-inside text-green-600 text-xs space-y-1">
+                              {currentEvaluation.keyStrengths.map((strength, index) => (
+                                <li key={index}>{strength}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {currentEvaluation.areasForImprovement && currentEvaluation.areasForImprovement.length > 0 && (
+                          <div>
+                            <h4 className="font-semibold text-yellow-700 mb-2 text-sm flex items-center gap-1">
+                              <AlertCircle className="w-3 h-3" />
+                              Areas to Improve:
+                            </h4>
+                            <ul className="list-disc list-inside text-yellow-600 text-xs space-y-1">
+                              {currentEvaluation.areasForImprovement.map((improvement, index) => (
+                                <li key={index}>{improvement}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Model Answer Toggle */}
+                      <div className="mt-4 pt-3 border-t border-divider/20">
+                        <button
+                          onClick={() => setShowModelAnswer(!showModelAnswer)}
+                          className="text-sm text-foreground-secondary hover:text-foreground flex items-center gap-1"
+                        >
+                          {showModelAnswer ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                          {showModelAnswer ? 'Hide' : 'View'} Model Answer
+                        </button>
+                        <AnimatePresence>
+                          {showModelAnswer && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: 'auto' }}
+                              exit={{ opacity: 0, height: 0 }}
+                              className="mt-2 p-3 border border-divider/10 rounded-lg"
+                            >
+                              <p className="text-foreground text-sm leading-relaxed">
+                                {currentQuestion.answer}
+                              </p>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
                     </div>
 
                     {/* Try Again Button */}
-                    <div className="flex justify-center">
-                      <button
-                        onClick={resetQuestion}
-                        className="px-4 py-2 text-sm text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
-                      >
-                        Try Again
-                      </button>
-                    </div>
-                  </motion.div>
+                    <button
+                      onClick={resetQuestion}
+                      className="px-4 py-2 text-sm text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors border border-green-200"
+                    >
+                      Try Again
+                    </button>
+                  </div>
                 )}
-              </AnimatePresence>
-
-              {/* History Panel */}
-              <AnimatePresence>
-                {showHistory && evaluationHistory && evaluationHistory.length > 0 && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="border rounded-lg p-4 bg-gray-50"
-                  >
-                    <h4 className="font-semibold text-gray-800 mb-3 text-sm flex items-center gap-2">
-                      <Clock className="w-4 h-4" />
-                      Previous Attempts
-                    </h4>
-                    <div className="space-y-3 max-h-40 overflow-y-auto">
-                      {evaluationHistory.map((evaluation, index) => (
-                        <div key={evaluation.id} className="bg-white border rounded p-3 text-xs">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className={`font-medium ${getScoreColor(evaluation.score)}`}>
-                              Score: {evaluation.score}/100
-                            </span>
-                            <span className="text-gray-500">
-                              {new Date(evaluation.createdAt).toLocaleDateString()}
-                            </span>
-                          </div>
-                          <p className="text-gray-600 line-clamp-2">{evaluation.userAnswer}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              </div>
             </div>
           </div>
         </div>

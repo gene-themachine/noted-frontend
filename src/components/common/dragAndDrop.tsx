@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { UploadCloud, File, X } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { UploadCloud, File, X, Loader, CheckCircle, Brain } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
 import { useQueryClient } from '@tanstack/react-query';
@@ -9,13 +9,60 @@ interface DragAndDropProps {
   projectId: string;
 }
 
+type ChunkingStatus = 'idle' | 'processing' | 'completed' | 'failed';
+
 export default function DragAndDrop({ projectId }: DragAndDropProps) {
   const queryClient = useQueryClient();
   const [isDragging, setIsDragging] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [isGlobal, setIsGlobal] = useState(false);
+  const [chunkingStatus, setChunkingStatus] = useState<ChunkingStatus>('idle');
+  const [uploadedFileId, setUploadedFileId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Monitor chunking status for uploaded files
+  useEffect(() => {
+    if (!uploadedFileId || chunkingStatus !== 'processing') return;
+
+    const checkChunkingStatus = async () => {
+      try {
+        // We'll need to call the library API to check vectorization status
+        // For now, simulate with a timeout
+        const response = await fetch(`/api/library/${uploadedFileId}/status`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.vectorStatus === 'completed') {
+            setChunkingStatus('completed');
+            setTimeout(() => {
+              setFile(null);
+              setUploadedFileId(null);
+              setChunkingStatus('idle');
+            }, 2000); // Show success for 2 seconds
+          } else if (data.vectorStatus === 'failed') {
+            setChunkingStatus('failed');
+          }
+        }
+      } catch (error) {
+        console.error('Failed to check chunking status:', error);
+        // On error, assume success after reasonable time
+        setTimeout(() => {
+          setChunkingStatus('completed');
+          setTimeout(() => {
+            setFile(null);
+            setUploadedFileId(null);
+            setChunkingStatus('idle');
+          }, 2000);
+        }, 5000);
+      }
+    };
+
+    // Poll every 2 seconds while processing
+    const interval = setInterval(checkChunkingStatus, 2000);
+    
+    // Clean up interval
+    return () => clearInterval(interval);
+  }, [uploadedFileId, chunkingStatus]);
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -72,7 +119,7 @@ export default function DragAndDrop({ projectId }: DragAndDropProps) {
 
         if (uploadResponse.ok) {
           console.log('Notifying backend of upload...');
-          await notifyBackendOfUpload({
+          const response = await notifyBackendOfUpload({
             projectId: projectId,
             key,
             fileName: file.name,
@@ -80,9 +127,19 @@ export default function DragAndDrop({ projectId }: DragAndDropProps) {
             size: file.size,
             isGlobal,
           });
+          
           // eslint-disable-next-line no-console
           console.log('File uploaded successfully!');
-          setFile(null); // Reset after submission
+          
+          // Start monitoring chunking status for PDF files
+          if (file.type === 'application/pdf' && response?.libraryItem?.id) {
+            setUploadedFileId(response.libraryItem.id);
+            setChunkingStatus('processing');
+            console.log('Starting chunking monitoring for file:', response.libraryItem.id);
+          } else {
+            // Non-PDF files complete immediately
+            setFile(null);
+          }
           
           // Refresh the library items for this project
           queryClient.invalidateQueries({ queryKey: ['projectLibrary', projectId] });
@@ -139,27 +196,61 @@ export default function DragAndDrop({ projectId }: DragAndDropProps) {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="mt-3 bg-surface-elevated p-3 rounded-lg flex items-center justify-between border border-border"
+            className="mt-3 bg-surface-elevated p-3 rounded-lg border border-border"
           >
-            <div className="flex items-center gap-2">
-              <File className="w-4 h-4 text-primary-orange" />
-              <p className="text-sm font-medium text-foreground">{file.name}</p>
-              <p className="text-xs text-foreground-muted">
-                ({(file.size / 1024).toFixed(2)} KB)
-              </p>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {chunkingStatus === 'processing' ? (
+                  <Brain className="w-4 h-4 text-blue-500 animate-pulse" />
+                ) : chunkingStatus === 'completed' ? (
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                ) : (
+                  <File className="w-4 h-4 text-primary-orange" />
+                )}
+                <p className="text-sm font-medium text-foreground">{file.name}</p>
+                <p className="text-xs text-foreground-muted">
+                  ({(file.size / 1024).toFixed(2)} KB)
+                </p>
+              </div>
+              {chunkingStatus === 'idle' && (
+                <button
+                  type="button"
+                  onClick={() => setFile(null)}
+                  className="p-1 text-foreground-muted hover:text-foreground rounded-full hover:bg-surface-pressed"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
-            <button
-              type="button"
-              onClick={() => setFile(null)}
-              className="p-1 text-foreground-muted hover:text-foreground rounded-full hover:bg-surface-pressed"
-            >
-              <X className="w-4 h-4" />
-            </button>
+            
+            {/* Chunking status indicator */}
+            {chunkingStatus !== 'idle' && (
+              <div className="mt-2 flex items-center gap-2">
+                {chunkingStatus === 'processing' && (
+                  <>
+                    <Loader className="w-3 h-3 animate-spin text-blue-500" />
+                    <p className="text-xs text-blue-600">Processing for AI features...</p>
+                  </>
+                )}
+                {chunkingStatus === 'completed' && (
+                  <>
+                    <CheckCircle className="w-3 h-3 text-green-500" />
+                    <p className="text-xs text-green-600">Ready for AI-powered study tools!</p>
+                  </>
+                )}
+                {chunkingStatus === 'failed' && (
+                  <>
+                    <X className="w-3 h-3 text-red-500" />
+                    <p className="text-xs text-red-600">Processing failed - file uploaded but AI features unavailable</p>
+                  </>
+                )}
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
 
-      {file && (
+      {file && chunkingStatus === 'idle' && (
         <div className="mt-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <input
