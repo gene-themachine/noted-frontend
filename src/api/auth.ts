@@ -1,40 +1,34 @@
-import axios from 'axios';
-import { SERVER_URL } from '../utils/constants';
-import { getBearerToken } from '../utils/localStorage';
+import { supabase } from '@/lib/supabase'
+import { setBearerToken, removeBearerToken } from '@/utils/localStorage'
 
-const authApi = axios.create({ baseURL: SERVER_URL });
+export async function login(email: string, password: string) {
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+  if (error) throw error
+  if (data.session?.access_token) setBearerToken(data.session.access_token)
+  return { data }
+}
 
-// Add request interceptor to automatically attach bearer token
-authApi.interceptors.request.use(
-  (config) => {
-    const token = getBearerToken();
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  },
-);
-
-export const login = (email: string, password: string) =>
-  authApi.post('/auth/login', { email, password });
-
-export const register = (
+export async function register(
   email: string,
   password: string,
   username: string,
   firstName: string,
-) =>
-  authApi.post('/auth/register', {
+) {
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    password_confirmation: password,
-    username,
-    firstName,
-  });
+    options: { data: { username, firstName } },
+  })
+  if (error) throw error
+  return { data: { userId: data.user?.id } }
+}
 
-export const logout = () => authApi.post('/auth/logout');
+export async function logout() {
+  await supabase.auth.signOut()
+  removeBearerToken()
+}
 
-export const getUser = () => authApi.get('/auth/user');
+export async function getUser() {
+  const { data } = await supabase.auth.getUser()
+  return { data }
+}

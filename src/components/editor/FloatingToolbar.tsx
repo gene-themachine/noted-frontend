@@ -9,7 +9,25 @@ interface FloatingToolbarProps {
 
 export default function FloatingToolbar({ onInsertFormat, editor }: FloatingToolbarProps) {
   const [showHeadingDropdown, setShowHeadingDropdown] = useState(false);
+  const [, forceUpdate] = useState({});
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Force re-render when editor state changes
+  useEffect(() => {
+    if (!editor) return;
+
+    const handleUpdate = () => {
+      forceUpdate({});
+    };
+
+    editor.on('selectionUpdate', handleUpdate);
+    editor.on('transaction', handleUpdate);
+
+    return () => {
+      editor.off('selectionUpdate', handleUpdate);
+      editor.off('transaction', handleUpdate);
+    };
+  }, [editor]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -28,19 +46,19 @@ export default function FloatingToolbar({ onInsertFormat, editor }: FloatingTool
   const toolbarButtons = [
     {
       icon: <Bold className="w-4 h-4" />,
-      title: 'Bold',
+      title: 'Bold (Cmd+B)',
       onClick: () => onInsertFormat('bold'),
       isActive: editor?.isActive('bold'),
     },
     {
       icon: <Italic className="w-4 h-4" />,
-      title: 'Italic',
+      title: 'Italic (Cmd+I)',
       onClick: () => onInsertFormat('italic'),
       isActive: editor?.isActive('italic'),
     },
     {
       icon: <Underline className="w-4 h-4" />,
-      title: 'Underline',
+      title: 'Underline (Cmd+U)',
       onClick: () => onInsertFormat('underline'),
       isActive: editor?.isActive('underline'),
     },

@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { register } from '@/api/auth';
-import { setBearerToken } from '@/utils/localStorage';
 import { ROUTES } from '@/utils/constants';
 
 export default function SignUpPage() {
@@ -57,28 +56,7 @@ export default function SignUpPage() {
         });
       }
     } catch (err: any) {
-      const status = err.response?.status;
-      const data = err.response?.data;
-
-      if (status === 422 && Array.isArray(data)) {
-        // Validation errors - display field-specific errors
-        const errors: {[key: string]: string} = {};
-        data.forEach((error: any) => {
-          if (error.field && error.message) {
-            errors[error.field] = error.message;
-          }
-        });
-        setFieldErrors(errors);
-      } else if (status === 409) {
-        // Conflict (email already exists)
-        setError(data?.message || 'Email already exists.');
-      } else if (status >= 500) {
-        // Server error
-        setError('Server error. Please try again later.');
-      } else {
-        // General error
-        setError(data?.message || 'Registration failed. Please try again.');
-      }
+      setError(err?.message || 'Registration failed. Please try again.')
     } finally {
       setIsLoading(false);
     }

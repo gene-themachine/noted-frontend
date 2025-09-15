@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { login } from '@/api/auth';
-import { setBearerToken } from '@/utils/localStorage';
 import { ROUTES } from '@/utils/constants';
 
 export default function SignInPage() {
@@ -51,35 +50,10 @@ export default function SignInPage() {
     setFieldErrors({});
 
     try {
-      const response = await login(formData.email, formData.password);
-      
-      if (response.data.token) {
-        setBearerToken(response.data.token);
-        navigate(ROUTES.HOME);
-      }
+      await login(formData.email, formData.password);
+      navigate(ROUTES.HOME);
     } catch (err: any) {
-      const status = err.response?.status;
-      const data = err.response?.data;
-
-      if (status === 422 && Array.isArray(data)) {
-        // Validation errors - display field-specific errors
-        const errors: {[key: string]: string} = {};
-        data.forEach((error: any) => {
-          if (error.field && error.message) {
-            errors[error.field] = error.message;
-          }
-        });
-        setFieldErrors(errors);
-      } else if (status === 401) {
-        // Invalid credentials
-        setError(data?.message || 'Invalid email or password.');
-      } else if (status >= 500) {
-        // Server error
-        setError('Server error. Please try again later.');
-      } else {
-        // General error
-        setError(data?.message || 'Login failed. Please try again.');
-      }
+      setError(err?.message || 'Login failed. Please try again.')
     } finally {
       setIsLoading(false);
     }

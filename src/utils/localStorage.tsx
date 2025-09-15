@@ -4,6 +4,8 @@ export const authTokenName = 'authToken';
  * Gets the site-stored authToken from localStorage
  */
 export function getBearerToken(): string {
+  // Prefer a token kept in localStorage by the Supabase auth listener
+  // (see src/lib/authToken.ts). Falls back to the legacy key if present.
   return localStorage.getItem(authTokenName) ?? '';
 }
 

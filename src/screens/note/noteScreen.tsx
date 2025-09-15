@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -36,39 +36,37 @@ export default function NoteScreen() {
   const updateNoteMutation = useUpdateNote();
   const deleteNoteMutation = useDeleteNote();
   const markFlashcardsAsNeedingUpdateMutation = useMarkFlashcardsAsNeedingUpdate();
-  const { startStream, stopStream } = useStreamQA();
+  const { startStream } = useStreamQA();
 
   const [name, setName] = useState('');
   const [content, setContent] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showAttachedFiles, setShowAttachedFiles] = useState(false);
-  const [toolbarKey, setToolbarKey] = useState(0);
   const [saveError, setSaveError] = useState(false);
   const [lastSavedContent, setLastSavedContent] = useState<{ name: string; content: string } | null>(null);
 
   const nameInputRef = useRef<HTMLTextAreaElement>(null);
   const isMountedRef = useRef(true);
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const retryCountRef = useRef(0);
-
-  // Configure custom underline with keyboard shortcuts
-  const CustomUnderline = Underline.extend({
-    name: 'customUnderline', // Give it a unique name
-    addKeyboardShortcuts() {
-      return {
-        'Mod-u': () => this.editor.commands.toggleUnderline(),
-        'Mod-U': () => this.editor.commands.toggleUnderline(), // For caps lock
-      }
-    },
-  });
 
   // Initialize Tiptap editor only when we have note data
   const editor = useEditor({
     extensions: [
       StarterKit,
       QAParagraph, // Extend paragraph with data-qa-id support
-      CustomUnderline,
+      Underline.extend({
+        addKeyboardShortcuts() {
+          return {
+            'Mod-u': () => this.editor.commands.toggleUnderline(),
+          }
+        },
+      }).configure({
+        HTMLAttributes: {
+          class: 'underlined-text',
+        },
+      }),
       IndentExtension,
       QABlockExtension,
     ],
@@ -77,12 +75,6 @@ export default function NoteScreen() {
       if (isMountedRef.current) {
         const htmlContent = editor.getHTML();
         setContent(htmlContent);
-      }
-    },
-    onTransaction: () => {
-      // Force re-render to update toolbar state immediately
-      if (isMountedRef.current) {
-        setToolbarKey(prev => prev + 1);
       }
     },
     editorProps: {
@@ -317,8 +309,8 @@ export default function NoteScreen() {
     // Do not save if the note is not loaded yet
     if (!note || !noteId) return;
     
-    // Don't save if content/name are still empty (initial state)
-    if (!content && !name) return;
+    // Don't save if we're still in initial loading state (before note data is set)
+    if (!lastSavedContent && !content && !name) return;
 
     // Clear existing timeout
     if (saveTimeoutRef.current) {
@@ -449,8 +441,8 @@ export default function NoteScreen() {
     );
   }
 
-  // Wait for editor to be initialized with note content and title to be loaded
-  if (!editor || !name) {
+  // Wait for editor to be initialized and note to be loaded
+  if (!editor || !note) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-2xl font-medium text-foreground-secondary">Initializing editor...</div>
@@ -618,7 +610,7 @@ export default function NoteScreen() {
       </motion.div>
 
       {/* Floating Toolbar */}
-      <FloatingToolbar key={toolbarKey} onInsertFormat={handleInsertFormat} editor={editor} />
+      <FloatingToolbar onInsertFormat={handleInsertFormat} editor={editor} />
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
