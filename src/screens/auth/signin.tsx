@@ -75,11 +75,12 @@ export default function SignInPage() {
             Noted
           </h1>
           
-          <nav className="hidden md:flex items-center gap-8">
-            <a href="#features" className="text-foreground-secondary hover:text-foreground transition-colors">Features</a>
-            <a href="#how-it-works" className="text-foreground-secondary hover:text-foreground transition-colors">How it works</a>
-            <a href="#pricing" className="text-foreground-secondary hover:text-foreground transition-colors">Pricing</a>
-          </nav>
+          <div className="absolute left-1/2 transform -translate-x-1/2 hidden md:block">
+            <nav className="flex items-center gap-8">
+              <a href="/#features" className="text-foreground-secondary hover:text-foreground transition-colors">Features</a>
+              <a href="/#how-it-works" className="text-foreground-secondary hover:text-foreground transition-colors">How it works</a>
+            </nav>
+          </div>
           
           <button
             onClick={() => navigate(ROUTES.REGISTER)}
