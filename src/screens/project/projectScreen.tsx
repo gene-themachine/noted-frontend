@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import StartWorkflow from '@/components/startWorkflow';
+import { Plus } from 'lucide-react';
 import QuickActionModal from '@/components/modals/QuickActionModal';
 import AddItemModal from '@/components/modals/AddItemModal';
 import AddLibraryItemModal from '@/components/modals/AddLibraryItemModal';
@@ -146,13 +146,15 @@ const ProjectScreen = () => {
 
   return (
     <div className="flex flex-col h-full w-full">
-      <div className="flex-grow flex items-center justify-center mt-[151px]">
-        <StartWorkflow onClick={() => setIsQuickActionModalOpen(true)} />
+      <div className="flex-grow flex items-center justify-center">
+        <button
+          onClick={() => setIsQuickActionModalOpen(true)}
+          className="flex items-center justify-center w-48 h-48 bg-primary-blue hover:bg-primary-blue-hover rounded-full shadow-lg transition-all duration-300 hover:scale-105"
+          aria-label="Start quick action"
+        >
+          <Plus className="w-16 h-16 text-white" />
+        </button>
       </div>
-      {/* This empty div acts as a spacer to push the StartWorkflow up,
-          matching the vertical alignment from the home screen. 
-          h-44 is an approximation of the project card row's height. */}
-      <div className="h-44" />
 
       <QuickActionModal
         isOpen={isQuickActionModalOpen}

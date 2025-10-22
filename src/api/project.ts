@@ -28,6 +28,13 @@ export const getProjectTree = (projectId: string) =>
 export const createProject = (name: string, description: string, color?: string) =>
   projectApi.post('/projects', { name, description, color });
 
+export const updateProject = (
+  id: string,
+  data: { name?: string; description?: string; color?: string }
+) => projectApi.put(`/projects/${id}`, data);
+
+export const deleteProject = (id: string) => projectApi.delete(`/projects/${id}`);
+
 export const getProjectNotes = (projectId: string) =>
   projectApi.get(`/projects/${projectId}/notes`);
 

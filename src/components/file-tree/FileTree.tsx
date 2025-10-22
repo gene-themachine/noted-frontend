@@ -1,6 +1,20 @@
-import React from 'react';
+import React, { useState } from 'react';
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverEvent,
+  DragStartEvent,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragOverlay,
+  closestCenter,
+} from '@dnd-kit/core';
+import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { Folder, FileText } from 'lucide-react';
 import TreeNode from './TreeNode';
-import { FolderNode } from '../../types';
+import { FolderNode, TreeNode as TreeNodeType } from '../../types';
+import { useMoveNode, useReorderNodes } from '../../hooks/note';
 
 interface FileTreeProps {
   root?: FolderNode;
@@ -9,14 +23,228 @@ interface FileTreeProps {
 }
 
 export default function FileTree({ root, projectId, onMobileClose }: FileTreeProps) {
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
+  const [initialCursorOffset, setInitialCursorOffset] = useState<{ x: number; y: number } | null>(null);
+
+  const moveNodeMutation = useMoveNode();
+  const reorderNodesMutation = useReorderNodes();
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // Require 8px of movement before drag starts
+      },
+    })
+  );
+
   if (!root) {
     return null;
   }
+
+  // Helper to find a node and its parent in the tree
+  const findNodeAndParent = (
+    tree: TreeNodeType,
+    nodeId: string,
+    parent: FolderNode | null = null
+  ): { node: TreeNodeType; parent: FolderNode | null } | null => {
+    if (tree.id === nodeId) {
+      return { node: tree, parent };
+    }
+
+    if (tree.type === 'folder' && tree.children) {
+      for (const child of tree.children) {
+        if (child.id === nodeId) {
+          return { node: child, parent: tree };
+        }
+        if (child.type === 'folder') {
+          const result = findNodeAndParent(child, nodeId, tree);
+          if (result) return result;
+        }
+      }
+    }
+
+    return null;
+  };
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+
+    // Calculate cursor offset within the dragged element
+    // Use PointerEvent for better cross-device support
+    const activatorEvent = event.activatorEvent as PointerEvent;
+    const rect = event.active.rect.current.initial;
+
+    if (activatorEvent && rect) {
+      // Calculate offset relative to the draggable container's bounding rect
+      // This works correctly even when clicking on nested elements (icons, text)
+      const offsetX = activatorEvent.clientX - rect.left;
+      const offsetY = activatorEvent.clientY - rect.top;
+
+      console.log('Drag started:', {
+        offsetX,
+        offsetY,
+        clientX: activatorEvent.clientX,
+        clientY: activatorEvent.clientY,
+        rectLeft: rect.left,
+        rectTop: rect.top,
+        target: activatorEvent.target
+      });
+
+      setInitialCursorOffset({ x: offsetX, y: offsetY });
+    }
+  };
+
+  const getActiveNode = (): TreeNodeType | null => {
+    if (!activeId) return null;
+    const result = findNodeAndParent(root, activeId);
+    return result?.node || null;
+  };
+
+  const handleDragOver = (event: DragOverEvent) => {
+    setOverId(event.over?.id as string | null);
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    setActiveId(null);
+    setOverId(null);
+    setInitialCursorOffset(null);
+
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    const activeNodeResult = findNodeAndParent(root, active.id as string);
+    const overNodeResult = findNodeAndParent(root, over.id as string);
+
+    if (!activeNodeResult || !overNodeResult) {
+      return;
+    }
+
+    const { node: activeNode, parent: activeParent } = activeNodeResult;
+    const { node: overNode, parent: overParent } = overNodeResult;
+
+    // Prevent dropping a folder into itself or one of its descendants
+    const isDescendant = (parentNode: FolderNode, maybeDescendantId: string): boolean => {
+      for (const child of parentNode.children) {
+        if (child.id === maybeDescendantId) return true;
+        if (child.type === 'folder' && isDescendant(child as FolderNode, maybeDescendantId)) return true;
+      }
+      return false;
+    };
+    if (activeNode.type === 'folder') {
+      // overNode could be the folder itself or any of its descendants
+      if (activeNode.id === overNode.id) return;
+      if (overNode.type === 'folder' && isDescendant(activeNode as FolderNode, overNode.id)) return;
+      if (overParent && isDescendant(activeNode as FolderNode, overParent.id)) return;
+    }
+
+    // Determine the target parent for the drop
+    let targetParent: FolderNode;
+    let targetIndex: number;
+
+    if (overNode.type === 'folder') {
+      // Dropping onto a folder - add as first child
+      targetParent = overNode as FolderNode;
+      targetIndex = 0;
+    } else {
+      // Dropping onto a note - insert in the same parent at the note's position
+      if (!overParent) return;
+      targetParent = overParent;
+      const overIndex = overParent.children.findIndex(c => c.id === over.id);
+      targetIndex = overIndex;
+    }
+
+    // Check if this is a reorder (same parent) or a move (different parent)
+    const isSameParent = activeParent?.id === targetParent.id;
+
+    if (isSameParent && activeParent) {
+      // Reorder within the same parent
+      const children = activeParent.children;
+      const oldIndex = children.findIndex(c => c.id === active.id);
+      const newIndex = children.findIndex(c => c.id === over.id);
+
+      if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
+        const reorderedChildren = arrayMove(children, oldIndex, newIndex);
+        const childIds = reorderedChildren.map(c => c.id);
+
+        reorderNodesMutation.mutate({
+          projectId,
+          parentId: activeParent.id,
+          childIds,
+        });
+      }
+    } else {
+      // Move to a different parent
+      moveNodeMutation.mutate({
+        projectId,
+        nodeId: active.id as string,
+        newParentId: targetParent.id,
+        newIndex: targetIndex,
+      });
+    }
+  };
+
+  const handleDragCancel = () => {
+    setActiveId(null);
+    setOverId(null);
+    setInitialCursorOffset(null);
+  };
+
+  // Top-level SortableContext should include only the root's direct children (visible at this level)
+  const topLevelIds = root.children.map((c) => c.id);
+
   return (
-    <div className="font-helvetica">
-      {root.children.map((node) => (
-        <TreeNode key={node.id} node={node} path={[]} projectId={projectId} onMobileClose={onMobileClose} />
-      ))}
-    </div>
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
+      onDragEnd={handleDragEnd}
+      onDragCancel={handleDragCancel}
+    >
+      <SortableContext items={topLevelIds} strategy={verticalListSortingStrategy}>
+        <div className="font-helvetica">
+          {root.children.map((node) => (
+            <TreeNode
+              key={node.id}
+              node={node}
+              path={[]}
+              projectId={projectId}
+              onMobileClose={onMobileClose}
+              activeId={activeId}
+              overId={overId}
+            />
+          ))}
+        </div>
+      </SortableContext>
+      <DragOverlay dropAnimation={null}>
+        {activeId ? (
+          <div
+            className="bg-white rounded-xl shadow-floating-lg px-3 py-2.5 border-2 border-primary-blue"
+            style={
+              initialCursorOffset
+                ? {
+                    transform: `translate(-${initialCursorOffset.x}px, -${initialCursorOffset.y}px)`,
+                  }
+                : undefined
+            }
+          >
+            <div className="flex items-center gap-3">
+              {getActiveNode()?.type === 'folder' ? (
+                <Folder className="w-5 h-5 text-primary-blue" />
+              ) : (
+                <FileText className="w-5 h-5 text-gray-500" />
+              )}
+              <span className="text-sm font-medium text-gray-800">
+                {getActiveNode()?.name || 'Dragging...'}
+              </span>
+            </div>
+          </div>
+        ) : null}
+      </DragOverlay>
+    </DndContext>
   );
 }

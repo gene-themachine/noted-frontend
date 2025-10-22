@@ -14,6 +14,8 @@ import {
   getAvailableStudyOptions,
   addLibraryItemToNote as apiAddLibraryItemToNote,
   removeLibraryItemFromNote as apiRemoveLibraryItemFromNote,
+  moveNode as apiMoveNode,
+  reorderNodes as apiReorderNodes,
 } from '../api/note'
 import { getProjectTree } from '../api/project'
 import { Note } from '../types'
@@ -161,5 +163,53 @@ export const useUpdateStudyOptions = () => {
       // SSE will provide the correct state, no manual rollback needed
     },
     // SSE automatically updates cache with server response, no manual update needed
+  })
+}
+
+export const useMoveNode = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      projectId,
+      nodeId,
+      newParentId,
+      newIndex,
+    }: {
+      projectId: string
+      nodeId: string
+      newParentId: string
+      newIndex: number
+    }) => apiMoveNode(projectId, nodeId, newParentId, newIndex),
+    onSuccess: (data, variables) => {
+      // Invalidate project tree to refetch with new structure
+      queryClient.invalidateQueries({ queryKey: ['projectTree', variables.projectId] })
+      queryClient.invalidateQueries({ queryKey: ['project', variables.projectId] })
+    },
+    onError: (err) => {
+      console.error('Failed to move node:', err)
+    },
+  })
+}
+
+export const useReorderNodes = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      projectId,
+      parentId,
+      childIds,
+    }: {
+      projectId: string
+      parentId: string
+      childIds: string[]
+    }) => apiReorderNodes(projectId, parentId, childIds),
+    onSuccess: (data, variables) => {
+      // Invalidate project tree to refetch with new order
+      queryClient.invalidateQueries({ queryKey: ['projectTree', variables.projectId] })
+      queryClient.invalidateQueries({ queryKey: ['project', variables.projectId] })
+    },
+    onError: (err) => {
+      console.error('Failed to reorder nodes:', err)
+    },
   })
 }

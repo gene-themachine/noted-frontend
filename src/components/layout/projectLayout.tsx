@@ -18,8 +18,8 @@ const ProjectLayout = () => {
   const navigate = useNavigate();
   const [showController, setShowController] = useState(false); // Mobile only
   const [showRightBar, setShowRightBar] = useState(false); // Mobile only
-  const [isControllerCollapsed, setIsControllerCollapsed] = useState(false); // Desktop only
-  const [isRightBarCollapsed, setIsRightBarCollapsed] = useState(false); // Desktop only
+  const [isControllerCollapsed, setIsControllerCollapsed] = useState(true); // Desktop only - default collapsed
+  const [isRightBarCollapsed, setIsRightBarCollapsed] = useState(true); // Desktop only - default collapsed
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
   const [isContextModalOpen, setIsContextModalOpen] = useState(false);
   
@@ -42,6 +42,13 @@ const ProjectLayout = () => {
   const createFlashcardsMutation = useCreateFlashcards();
   const addLibraryItemMutation = useAddLibraryItemToNote();
   const removeLibraryItemMutation = useRemoveLibraryItemFromNote();
+
+  // Set page title to project name
+  useEffect(() => {
+    if (project?.name) {
+      document.title = project.name;
+    }
+  }, [project?.name]);
 
 
   const handleAddItem = (type: 'folder' | 'note', name: string) => {
@@ -92,15 +99,6 @@ const ProjectLayout = () => {
     
     closeFlashcardModal();
   }, [activeNoteId, updateStudyOptionsMutation, createFlashcardsMutation, closeFlashcardModal]);
-
-  const oneSidebarCollapsed = isControllerCollapsed !== isRightBarCollapsed;
-  const bothSidebarsCollapsed = isControllerCollapsed && isRightBarCollapsed;
-
-  const mainContentPadding = bothSidebarsCollapsed
-    ? 'lg:px-24'
-    : oneSidebarCollapsed
-    ? 'lg:px-[var(--sidebar-width)]'
-    : 'lg:px-[calc(var(--sidebar-width)+5rem)]';
 
   return (
     <div className="flex-grow relative overflow-hidden [--sidebar-width:14rem] lg:[--sidebar-width:16rem] xl:[--sidebar-width:18rem]">
@@ -188,11 +186,7 @@ const ProjectLayout = () => {
         </button>
 
         {/* Main Content */}
-        <main className={`
-          w-full h-full lg:py-8
-          transition-all duration-500 ease-in-out
-          ${mainContentPadding}
-        `}>
+        <main className="w-full h-full lg:py-8 lg:px-24">
           <div className="w-full h-full max-w-content mx-auto">
             <div className="h-full mt-20 lg:mt-0">
               <Outlet context={{ openLibraryModal: () => setIsContextModalOpen(true) }} />

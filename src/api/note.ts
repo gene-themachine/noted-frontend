@@ -64,3 +64,25 @@ export const removeLibraryItemFromNote = async (noteId: string, libraryItemId: s
   const response = await api.delete(`/notes/${noteId}/library-items/${libraryItemId}`)
   return response.data
 }
+
+export const moveNode = async (
+  projectId: string,
+  nodeId: string,
+  newParentId: string,
+  newIndex: number
+) => {
+  const response = await noteApi.put(`/projects/${projectId}/tree/move`, {
+    nodeId,
+    newParentId,
+    newIndex,
+  })
+  return response.data
+}
+
+export const reorderNodes = async (projectId: string, parentId: string, childIds: string[]) => {
+  const response = await noteApi.put(`/projects/${projectId}/tree/reorder`, {
+    parentId,
+    childIds,
+  })
+  return response.data
+}

@@ -1,19 +1,30 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useProjects, useCreateProject } from "@/hooks/project";
+import { useProjects, useCreateProject, useUpdateProject, useDeleteProject } from "@/hooks/project";
 import { Project } from "@/types/index";
 import ProjectCard from "@/components/project/projectCard";
-import StartWorkflow from '@/components/startWorkflow';
 import AddProjectModal from '@/components/modals/addProjectModal';
+import EditProjectModal from '@/components/modals/EditProjectModal';
+import DeleteProjectModal from '@/components/modals/DeleteProjectModal';
 import { PROJECT_CONSTANTS } from '@/utils/constants';
 
 export default function HomePage() {
   const { data: projects = [], isLoading, error } = useProjects();
   const createProjectMutation = useCreateProject();
+  const updateProjectMutation = useUpdateProject();
+  const deleteProjectMutation = useDeleteProject();
+
+  // Set page title
+  useEffect(() => {
+    document.title = 'Dashboard';
+  }, []);
   const [isCreating, setIsCreating] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
@@ -35,6 +46,43 @@ export default function HomePage() {
         scrollContainerRef.current.scrollLeft =
           scrollContainerRef.current.scrollWidth;
       }
+    }
+  };
+
+  const handleEditProject = (project: Project) => {
+    setSelectedProject(project);
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateProject = async (name: string, description: string, color: string) => {
+    if (!selectedProject) return;
+
+    try {
+      await updateProjectMutation.mutateAsync({
+        id: selectedProject.id,
+        data: { name, description, color },
+      });
+      setIsEditModalOpen(false);
+      setSelectedProject(null);
+    } catch (error) {
+      console.error('Failed to update project:', error);
+    }
+  };
+
+  const handleDeleteProject = (project: Project) => {
+    setSelectedProject(project);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedProject) return;
+
+    try {
+      await deleteProjectMutation.mutateAsync(selectedProject.id);
+      setIsDeleteModalOpen(false);
+      setSelectedProject(null);
+    } catch (error) {
+      console.error('Failed to delete project:', error);
     }
   };
 
@@ -88,6 +136,8 @@ export default function HomePage() {
               project={project}
               colorClass={getProjectColor(index)}
               onClick={() => navigate(`/project/${project.id}`)}
+              onEdit={() => handleEditProject(project)}
+              onDelete={() => handleDeleteProject(project)}
             />
           ))}
         </div>
@@ -96,7 +146,7 @@ export default function HomePage() {
         <div className="absolute right-6 lg:right-8 bottom-18 z-floating">
             <Button
               size="icon"
-              className="w-16 h-16 rounded-full bg-surface/90 backdrop-blur-md border border-border-light text-foreground-secondary hover:bg-surface hover:text-foreground shadow-floating hover:shadow-floating-lg transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary-blue focus:ring-offset-2"
+              className="w-16 h-16 rounded-full bg-surface backdrop-blur-md border-2 border-border text-foreground hover:bg-surface-hover hover:border-foreground-secondary shadow-floating hover:shadow-floating-lg transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary-blue focus:ring-offset-2"
               variant="ghost"
               onClick={() => setIsModalOpen(true)}
               disabled={isCreating}
@@ -105,7 +155,7 @@ export default function HomePage() {
               {isCreating ? (
                 <div className="w-7 h-7 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
               ) : (
-                <Plus className="w-7 h-7 transition-transform duration-200 group-hover:scale-110" />
+                <Plus className="w-8 h-8 transition-transform duration-200 group-hover:scale-110" />
               )}
             </Button>
         </div>
@@ -115,6 +165,30 @@ export default function HomePage() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleCreateProject}
+        theme="light"
+      />
+
+      <EditProjectModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedProject(null);
+        }}
+        onSubmit={handleUpdateProject}
+        project={selectedProject}
+        isUpdating={updateProjectMutation.isPending}
+        theme="light"
+      />
+
+      <DeleteProjectModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setSelectedProject(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        projectName={selectedProject?.name || ''}
+        isDeleting={deleteProjectMutation.isPending}
         theme="light"
       />
     </div>

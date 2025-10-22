@@ -4,6 +4,7 @@ export type FileNode = {
   name: string;
   type: 'note';
   noteId: string;
+  order?: number;
 };
 
 export type FolderNode = {
@@ -11,6 +12,7 @@ export type FolderNode = {
   name: string;
   type: 'folder';
   children: Array<FolderNode | FileNode>;
+  order?: number;
 };
 
 export type TreeNode = FolderNode | FileNode;

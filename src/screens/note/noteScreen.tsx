@@ -458,7 +458,7 @@ export default function NoteScreen() {
         transition={{ duration: 0.5 }}
         className="min-h-screen p-4 md:p-6 lg:p-8 xl:p-12 font-helvetica"
       >
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-3xl mx-auto">
           {/* Header */}
           <div className="mb-8">
             <div className="flex flex-col xl:flex-row xl:justify-between xl:items-start gap-x-8 gap-y-4">

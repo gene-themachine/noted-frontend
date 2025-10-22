@@ -90,20 +90,35 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* Right column - Description */}
+            {/* Right column - Description with notebook feel */}
             <div className="lg:col-span-5 lg:pt-24">
-              <p className="text-xl lg:text-2xl text-foreground-secondary mb-8 leading-relaxed">
-                Stop re-reading endless summaries. Take notes, get AI autocomplete as you type, and press{' '}
-                <span className="inline-flex items-center gap-1 bg-gray-100 text-foreground px-2 py-1 rounded font-mono text-sm font-medium">
-                  <Command className="w-3 h-3" />
-                  Enter
-                </span>
-                {' '}for instant answers to any question.
-              </p>
+              <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl p-8 border-l-4 border-primary-blue/30 shadow-lg">
+                {/* Grid background */}
+                <div className="absolute inset-0 pointer-events-none opacity-10">
+                  <div className="absolute inset-0" style={{
+                    backgroundImage: `
+                      repeating-linear-gradient(0deg, #cbd5e1 0px, #cbd5e1 1px, transparent 1px, transparent 24px),
+                      repeating-linear-gradient(90deg, #cbd5e1 0px, #cbd5e1 1px, transparent 1px, transparent 24px)
+                    `,
+                    backgroundSize: '24px 24px'
+                  }}></div>
+                </div>
 
-              <p className="text-lg text-foreground-tertiary leading-relaxed">
-                Turn your content into flashcards and quizzes for active learning that actually sticks.
-              </p>
+                <div className="relative">
+                  <p className="text-xl lg:text-2xl text-foreground-secondary mb-8 leading-relaxed">
+                    Stop re-reading endless summaries. Take notes, get AI autocomplete as you type, and press{' '}
+                    <span className="inline-flex items-center gap-1 bg-gray-100 text-foreground px-2 py-1 rounded font-mono text-sm font-medium">
+                      <Command className="w-3 h-3" />
+                      Enter
+                    </span>
+                    {' '}for instant answers to any question.
+                  </p>
+
+                  <p className="text-lg text-foreground-tertiary leading-relaxed">
+                    Turn your content into flashcards and quizzes for active learning that actually sticks.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -386,7 +401,7 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="px-6 lg:px-8 py-12 bg-foreground text-white">
+      <footer className="px-6 lg:px-8 py-12 bg-home-background border-t border-border-light/30">
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between gap-8 mb-8">
             <div className="flex items-center gap-4">
@@ -394,18 +409,18 @@ export default function LandingPage() {
                 <BookOpen className="w-7 h-7 text-white" />
               </div>
               <div>
-                <div className="text-2xl font-bold">Noted</div>
-                <p className="text-gray-400 text-sm">
+                <div className="text-2xl font-bold text-foreground">Noted</div>
+                <p className="text-foreground-secondary text-sm">
                   AI-powered note-taking that helps you study smarter
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-8 text-sm">
-              <a href="#features" className="text-gray-400 hover:text-white transition-all duration-200 hover:translate-y-[-2px]">Features</a>
+              <a href="#features" className="text-foreground-secondary hover:text-foreground transition-all duration-200 hover:translate-y-[-2px]">Features</a>
             </div>
           </div>
-          <div className="border-t border-gray-800 pt-8 text-center">
-            <p className="text-gray-400 text-sm">
+          <div className="border-t border-border-light/30 pt-8 text-center">
+            <p className="text-foreground-secondary text-sm">
               &copy; 2025 Noted. Built with care for students who want to learn smarter.
             </p>
           </div>
