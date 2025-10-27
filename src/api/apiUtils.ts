@@ -1,7 +1,6 @@
 import axios from 'axios';
 import { SERVER_URL } from '../utils/constants';
 import { getBearerToken } from '../utils/localStorage';
-import '../lib/authToken' // initializes Supabase auth listener to keep token fresh
 
 export const api = axios.create({
   baseURL: SERVER_URL,

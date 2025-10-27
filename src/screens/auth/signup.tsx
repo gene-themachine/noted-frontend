@@ -101,22 +101,22 @@ export default function SignUpPage() {
       </header>
 
       {/* Main Content */}
-      <main className="relative px-6 lg:px-8 py-4 pt-24 h-screen flex items-center justify-center overflow-hidden">
+      <main className="relative px-6 lg:px-8 py-8 pt-24 min-h-screen flex items-center justify-center">
         <div className="w-full max-w-lg mx-auto">
           {/* Welcome Badge */}
-          <div className="text-center mb-4">
-            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-primary-orange/10 to-primary-blue/10 border border-primary-orange/20 px-3 py-1.5 rounded-full mb-3">
-              <Sparkles className="w-3.5 h-3.5 text-primary-orange" />
-              <span className="text-primary-orange font-semibold text-xs">START LEARNING ACTIVELY</span>
+          <div className="text-center mb-5">
+            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-primary-orange/10 to-primary-blue/10 border border-primary-orange/20 px-4 py-2 rounded-full mb-4">
+              <Sparkles className="w-4 h-4 text-primary-orange" />
+              <span className="text-primary-orange font-semibold text-sm">START LEARNING ACTIVELY</span>
             </div>
-            <h1 className="text-3xl lg:text-4xl font-bold text-foreground mb-2 tracking-tight">Join Noted</h1>
-            <p className="text-base text-foreground-secondary">Create your account in seconds</p>
+            <h1 className="text-4xl lg:text-5xl font-bold text-foreground mb-2 tracking-tight">Join Noted</h1>
+            <p className="text-lg text-foreground-secondary">Create your account in seconds</p>
           </div>
 
           {/* Error Message */}
           {error && (
-            <div className="mb-3 bg-red-50 border-l-4 border-red-500 p-3 rounded-r-2xl">
-              <p className="text-red-600 text-xs font-medium">{error}</p>
+            <div className="mb-4 bg-red-50 border-l-4 border-red-500 p-3 rounded-r-2xl">
+              <p className="text-red-600 text-sm font-medium">{error}</p>
             </div>
           )}
 
@@ -127,9 +127,9 @@ export default function SignUpPage() {
 
             {/* Form Card */}
             <div className="relative bg-white rounded-3xl shadow-2xl border border-border-light overflow-hidden">
-              <form onSubmit={handleSubmit} className="p-6 lg:p-7 space-y-3">
+              <form onSubmit={handleSubmit} className="p-6 lg:p-8 space-y-4">
                 <div>
-                  <label htmlFor="firstName" className="block text-xs font-semibold text-foreground mb-1.5">
+                  <label htmlFor="firstName" className="block text-sm font-semibold text-foreground mb-1.5">
                     First Name
                   </label>
                   <input
@@ -139,7 +139,7 @@ export default function SignUpPage() {
                     value={formData.firstName}
                     onChange={handleChange}
                     required
-                    className={`w-full px-3 py-2.5 border-2 rounded-xl bg-white text-sm text-foreground placeholder-foreground-tertiary focus:outline-none focus:ring-2 focus:ring-offset-1 transition-all duration-200 ${
+                    className={`w-full px-4 py-3 border-2 rounded-xl bg-white text-foreground placeholder-foreground-tertiary focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ${
                       fieldErrors.firstName
                         ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
                         : 'border-border-light focus:ring-primary-orange focus:border-primary-orange hover:border-border'
@@ -147,7 +147,7 @@ export default function SignUpPage() {
                     placeholder="Enter your first name"
                   />
                   {fieldErrors.firstName && (
-                    <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                    <p className="mt-1.5 text-sm text-red-600 flex items-center gap-1">
                       <span className="inline-block w-1 h-1 bg-red-600 rounded-full"></span>
                       {fieldErrors.firstName}
                     </p>
@@ -155,7 +155,7 @@ export default function SignUpPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="username" className="block text-xs font-semibold text-foreground mb-1.5">
+                  <label htmlFor="username" className="block text-sm font-semibold text-foreground mb-1.5">
                     Username
                   </label>
                   <input
@@ -165,7 +165,7 @@ export default function SignUpPage() {
                     value={formData.username}
                     onChange={handleChange}
                     required
-                    className={`w-full px-3 py-2.5 border-2 rounded-xl bg-white text-sm text-foreground placeholder-foreground-tertiary focus:outline-none focus:ring-2 focus:ring-offset-1 transition-all duration-200 ${
+                    className={`w-full px-4 py-3 border-2 rounded-xl bg-white text-foreground placeholder-foreground-tertiary focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ${
                       fieldErrors.username
                         ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
                         : 'border-border-light focus:ring-primary-orange focus:border-primary-orange hover:border-border'
@@ -173,7 +173,7 @@ export default function SignUpPage() {
                     placeholder="Choose a username"
                   />
                   {fieldErrors.username && (
-                    <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                    <p className="mt-1.5 text-sm text-red-600 flex items-center gap-1">
                       <span className="inline-block w-1 h-1 bg-red-600 rounded-full"></span>
                       {fieldErrors.username}
                     </p>
@@ -181,7 +181,7 @@ export default function SignUpPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="email" className="block text-xs font-semibold text-foreground mb-1.5">
+                  <label htmlFor="email" className="block text-sm font-semibold text-foreground mb-1.5">
                     Email
                   </label>
                   <input
@@ -191,7 +191,7 @@ export default function SignUpPage() {
                     value={formData.email}
                     onChange={handleChange}
                     required
-                    className={`w-full px-3 py-2.5 border-2 rounded-xl bg-white text-sm text-foreground placeholder-foreground-tertiary focus:outline-none focus:ring-2 focus:ring-offset-1 transition-all duration-200 ${
+                    className={`w-full px-4 py-3 border-2 rounded-xl bg-white text-foreground placeholder-foreground-tertiary focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ${
                       fieldErrors.email
                         ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
                         : 'border-border-light focus:ring-primary-orange focus:border-primary-orange hover:border-border'
@@ -199,7 +199,7 @@ export default function SignUpPage() {
                     placeholder="Enter your email"
                   />
                   {fieldErrors.email && (
-                    <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                    <p className="mt-1.5 text-sm text-red-600 flex items-center gap-1">
                       <span className="inline-block w-1 h-1 bg-red-600 rounded-full"></span>
                       {fieldErrors.email}
                     </p>
@@ -207,7 +207,7 @@ export default function SignUpPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="password" className="block text-xs font-semibold text-foreground mb-1.5">
+                  <label htmlFor="password" className="block text-sm font-semibold text-foreground mb-1.5">
                     Password
                   </label>
                   <div className="relative">
@@ -218,7 +218,7 @@ export default function SignUpPage() {
                       value={formData.password}
                       onChange={handleChange}
                       required
-                      className={`w-full px-3 py-2.5 pr-10 border-2 rounded-xl bg-white text-sm text-foreground placeholder-foreground-tertiary focus:outline-none focus:ring-2 focus:ring-offset-1 transition-all duration-200 ${
+                      className={`w-full px-4 py-3 pr-12 border-2 rounded-xl bg-white text-foreground placeholder-foreground-tertiary focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ${
                         fieldErrors.password
                           ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
                           : 'border-border-light focus:ring-primary-orange focus:border-primary-orange hover:border-border'
@@ -228,17 +228,17 @@ export default function SignUpPage() {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-foreground-tertiary hover:text-foreground-secondary transition-all duration-200 hover:scale-110"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground-tertiary hover:text-foreground-secondary transition-all duration-200 hover:scale-110"
                     >
                       {showPassword ? (
-                        <EyeOff className="w-4 h-4" />
+                        <EyeOff className="w-5 h-5" />
                       ) : (
-                        <Eye className="w-4 h-4" />
+                        <Eye className="w-5 h-5" />
                       )}
                     </button>
                   </div>
                   {fieldErrors.password && (
-                    <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                    <p className="mt-1.5 text-sm text-red-600 flex items-center gap-1">
                       <span className="inline-block w-1 h-1 bg-red-600 rounded-full"></span>
                       {fieldErrors.password}
                     </p>
@@ -248,24 +248,24 @@ export default function SignUpPage() {
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-primary-orange text-white hover:bg-hover-orange rounded-xl py-3 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300 flex items-center justify-center gap-2"
+                  className="w-full bg-primary-orange text-white hover:bg-hover-orange rounded-xl py-3.5 text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300 flex items-center justify-center gap-2"
                 >
                   {isLoading ? (
                     <span className="flex items-center justify-center gap-2">
-                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                      <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
                       Creating account...
                     </span>
                   ) : (
                     <>
                       Get started
-                      <ArrowRight className="w-4 h-4" />
+                      <ArrowRight className="w-5 h-5" />
                     </>
                   )}
                 </Button>
 
                 {/* Terms and Privacy */}
                 <div className="text-center pt-1">
-                  <p className="text-[10px] text-foreground-tertiary leading-relaxed">
+                  <p className="text-xs text-foreground-tertiary leading-relaxed">
                     By signing up, you agree to our{' '}
                     <button type="button" className="text-primary-orange hover:underline font-medium">
                       Terms
@@ -281,8 +281,8 @@ export default function SignUpPage() {
           </div>
 
           {/* Sign In Link */}
-          <div className="mt-4 text-center">
-            <p className="text-sm text-foreground-secondary">
+          <div className="mt-5 text-center">
+            <p className="text-foreground-secondary">
               Already have an account?{' '}
               <button
                 onClick={() => navigate(ROUTES.LOGIN)}

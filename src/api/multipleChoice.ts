@@ -2,6 +2,9 @@ import { api } from './apiUtils';
 import { MultipleChoiceQuestion, MultipleChoiceSet, CreateMultipleChoiceSetPayload, UpdateMultipleChoiceSetPayload } from '../types';
 import { CreateStudySetRequest } from '../types/studySets';
 
+// Re-export types for use in hooks
+export type { MultipleChoiceQuestion, MultipleChoiceSet, CreateMultipleChoiceSetPayload, UpdateMultipleChoiceSetPayload };
+
 // Create a new multiple choice set
 export const createMultipleChoiceSet = async (payload: CreateMultipleChoiceSetPayload): Promise<MultipleChoiceSet> => {
   const response = await api.post('/multiple-choice/sets', payload);

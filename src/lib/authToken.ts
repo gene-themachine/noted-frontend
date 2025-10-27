@@ -26,4 +26,3 @@ supabase.auth.onAuthStateChange((_event, session) => {
 export function getAccessTokenSync() {
   return currentToken
 }
-

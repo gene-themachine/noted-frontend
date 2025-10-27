@@ -1,7 +1,6 @@
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { getBearerToken } from '../utils/localStorage';
-import '../lib/authToken'
 import { ROUTES } from '../utils/constants';
 
 const PublicRoute: React.FC = () => {

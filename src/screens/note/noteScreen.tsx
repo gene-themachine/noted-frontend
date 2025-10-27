@@ -118,7 +118,8 @@ export default function NoteScreen() {
       },
       // onChunk: Update the Q&A block with accumulated answer
       (chunk: string, accumulatedAnswer: string) => {
-        console.log('📄 Received chunk:', { chunk, accumulatedLength: accumulatedAnswer.length });
+        console.log('📄 Received chunk:', { chunk: chunk.substring(0, 50), accumulatedLength: accumulatedAnswer.length });
+        console.log('📄 Accumulated answer last 150 chars:', accumulatedAnswer.substring(Math.max(0, accumulatedAnswer.length - 150)));
         if (editor) {
           editor.commands.updateQABlock(id, {
             status: 'loading',
@@ -126,13 +127,18 @@ export default function NoteScreen() {
           });
         }
       },
-      // onComplete: Mark as completed
+      // onComplete: Mark as completed and reformat with proper paragraph breaks
       (finalAnswer: string) => {
         console.log('✅ Q&A streaming completed:', { finalLength: finalAnswer.length });
+        console.log('✅ Final answer last 200 chars:', finalAnswer.substring(Math.max(0, finalAnswer.length - 200)));
+        // Count how many times "Sources:" appears
+        const sourcesCount = (finalAnswer.match(/\*\*Sources:\*\*/g) || []).length;
+        console.log(`✅ "**Sources:**" appears ${sourcesCount} times in final answer`);
+        // Update with final answer and completed status to trigger proper paragraph formatting
         if (editor) {
           editor.commands.updateQABlock(id, {
             status: 'completed',
-            answer: finalAnswer,
+            answer: finalAnswer, // Pass final answer to trigger proper multi-paragraph formatting
           });
         }
       },

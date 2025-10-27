@@ -11,7 +11,7 @@ import {
   closestCenter,
 } from '@dnd-kit/core';
 import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { Folder, FileText } from 'lucide-react';
+import { Folder, FileText, GripVertical, ChevronRight } from 'lucide-react';
 import TreeNode from './TreeNode';
 import { FolderNode, TreeNode as TreeNodeType } from '../../types';
 import { useMoveNode, useReorderNodes } from '../../hooks/note';
@@ -25,7 +25,6 @@ interface FileTreeProps {
 export default function FileTree({ root, projectId, onMobileClose }: FileTreeProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
-  const [initialCursorOffset, setInitialCursorOffset] = useState<{ x: number; y: number } | null>(null);
 
   const moveNodeMutation = useMoveNode();
   const reorderNodesMutation = useReorderNodes();
@@ -37,6 +36,16 @@ export default function FileTree({ root, projectId, onMobileClose }: FileTreePro
       },
     })
   );
+
+  // Custom modifier to position drag handle under cursor
+  // DragOverlay structure: px-3 (12px), py-2.5 (10px), h-6 span (24px), w-4 icon (16px)
+  const cursorAtDragHandle = ({ transform }: { transform: { x: number; y: number } }) => {
+    return {
+      ...transform,
+      x: transform.x - 20, // 12px padding + 8px (half icon width)
+      y: transform.y - 22, // 10px padding + 12px (half span height)
+    };
+  };
 
   if (!root) {
     return null;
@@ -69,30 +78,6 @@ export default function FileTree({ root, projectId, onMobileClose }: FileTreePro
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
-
-    // Calculate cursor offset within the dragged element
-    // Use PointerEvent for better cross-device support
-    const activatorEvent = event.activatorEvent as PointerEvent;
-    const rect = event.active.rect.current.initial;
-
-    if (activatorEvent && rect) {
-      // Calculate offset relative to the draggable container's bounding rect
-      // This works correctly even when clicking on nested elements (icons, text)
-      const offsetX = activatorEvent.clientX - rect.left;
-      const offsetY = activatorEvent.clientY - rect.top;
-
-      console.log('Drag started:', {
-        offsetX,
-        offsetY,
-        clientX: activatorEvent.clientX,
-        clientY: activatorEvent.clientY,
-        rectLeft: rect.left,
-        rectTop: rect.top,
-        target: activatorEvent.target
-      });
-
-      setInitialCursorOffset({ x: offsetX, y: offsetY });
-    }
   };
 
   const getActiveNode = (): TreeNodeType | null => {
@@ -110,7 +95,6 @@ export default function FileTree({ root, projectId, onMobileClose }: FileTreePro
 
     setActiveId(null);
     setOverId(null);
-    setInitialCursorOffset(null);
 
     if (!over || active.id === over.id) {
       return;
@@ -190,7 +174,6 @@ export default function FileTree({ root, projectId, onMobileClose }: FileTreePro
   const handleDragCancel = () => {
     setActiveId(null);
     setOverId(null);
-    setInitialCursorOffset(null);
   };
 
   // Top-level SortableContext should include only the root's direct children (visible at this level)
@@ -220,24 +203,22 @@ export default function FileTree({ root, projectId, onMobileClose }: FileTreePro
           ))}
         </div>
       </SortableContext>
-      <DragOverlay dropAnimation={null}>
+      <DragOverlay dropAnimation={null} modifiers={[cursorAtDragHandle]}>
         {activeId ? (
-          <div
-            className="bg-white rounded-xl shadow-floating-lg px-3 py-2.5 border-2 border-primary-blue"
-            style={
-              initialCursorOffset
-                ? {
-                    transform: `translate(-${initialCursorOffset.x}px, -${initialCursorOffset.y}px)`,
-                  }
-                : undefined
-            }
-          >
-            <div className="flex items-center gap-3">
-              {getActiveNode()?.type === 'folder' ? (
-                <Folder className="w-5 h-5 text-primary-blue" />
-              ) : (
-                <FileText className="w-5 h-5 text-gray-500" />
-              )}
+          <div className="bg-white rounded-xl shadow-floating-lg px-3 py-2.5 border-2 border-primary-blue cursor-grabbing">
+            <div className="flex items-center">
+              {/* Match the exact structure from TreeNode */}
+              <span className="flex items-center h-6 flex-shrink-0">
+                <GripVertical className="w-4 h-4 mr-2 text-gray-400" />
+                {getActiveNode()?.type === 'folder' && (
+                  <ChevronRight className="w-4 h-4 mr-2 text-primary-blue rotate-90" />
+                )}
+                {getActiveNode()?.type === 'folder' ? (
+                  <Folder className="w-5 h-5 mr-3 text-primary-blue" />
+                ) : (
+                  <FileText className="w-5 h-5 ml-6 mr-3 text-gray-500" />
+                )}
+              </span>
               <span className="text-sm font-medium text-gray-800">
                 {getActiveNode()?.name || 'Dragging...'}
               </span>

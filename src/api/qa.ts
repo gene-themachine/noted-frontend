@@ -58,6 +58,7 @@ export const streamQA = (
   const eventSource = new EventSource(url.toString());
   let buffer = '';
   let receivedAnyChunk = false;
+  let hasCompleted = false; // Flag to prevent duplicate completions
 
   eventSource.onopen = (event) => {
     console.log('✅ EventSource connection opened:', event);
@@ -66,6 +67,13 @@ export const streamQA = (
 
   eventSource.onmessage = (event) => {
     console.log('📨 Received SSE message:', event.data);
+
+    // Prevent processing if already completed
+    if (hasCompleted) {
+      console.log('⚠️ Ignoring message - stream already completed');
+      return;
+    }
+
     try {
       const msg = JSON.parse(event.data);
 
@@ -74,6 +82,9 @@ export const streamQA = (
         const { type, data } = msg as { type: string; data: any };
         if (type === 'status') {
           return; // no-op
+        }
+        if (type === 'ping') {
+          return; // Ignore keep-alive pings
         }
         if (type === 'chunk') {
           const chunk: string = data.chunk || '';
@@ -92,16 +103,22 @@ export const streamQA = (
           return;
         }
         if (type === 'metadata') {
-          onComplete(buffer);
-          try { eventSource.close(); } catch {}
+          if (!hasCompleted) {
+            hasCompleted = true;
+            onComplete(buffer);
+            try { eventSource.close(); } catch {}
+          }
           return;
         }
       }
 
       // Legacy flat schema { chunk, isComplete } or error
       if (msg?.error) {
-        onError(msg.error || 'Unknown error occurred');
-        try { eventSource.close(); } catch {}
+        if (!hasCompleted) {
+          hasCompleted = true;
+          onError(msg.error || 'Unknown error occurred');
+          try { eventSource.close(); } catch {}
+        }
         return;
       }
       if (typeof msg?.chunk === 'string') {
@@ -112,8 +129,11 @@ export const streamQA = (
         onChunk(chunk, buffer);
         if (isComplete) {
           // legacy path: finalize on completion
-          onComplete(buffer);
-          try { eventSource.close(); } catch {}
+          if (!hasCompleted) {
+            hasCompleted = true;
+            onComplete(buffer);
+            try { eventSource.close(); } catch {}
+          }
         }
         return;
       }
@@ -128,15 +148,20 @@ export const streamQA = (
         return;
       }
       if (oldData?.type === 'complete') {
-        const ans = oldData.data?.answer || buffer;
-        onComplete(ans);
-        try { eventSource.close(); } catch {}
+        if (!hasCompleted) {
+          hasCompleted = true;
+          const ans = oldData.data?.answer || buffer;
+          onComplete(ans);
+          try { eventSource.close(); } catch {}
+        }
         return;
       }
     } catch (error) {
-      console.error('Failed to parse SSE data:', error);
-      onError('Failed to parse server response');
-      try { eventSource.close(); } catch {}
+      console.warn('⚠️ SSE parse warning (likely comment or incomplete data):', error);
+      console.warn('Raw event data:', event.data);
+      // Don't treat parse errors as fatal - they're often just SSE comments or incomplete data
+      // Continue listening for more messages instead of closing the connection
+      return;
     }
   };
 
@@ -145,21 +170,33 @@ export const streamQA = (
     console.error('📡 Connection state during error:', eventSource.readyState);
     console.error('📡 EventSource URL:', url.toString());
 
+    // Prevent duplicate completion calls
+    if (hasCompleted) {
+      console.log('⚠️ Ignoring error handler - stream already completed');
+      try { eventSource.close(); } catch {}
+      return;
+    }
+
     // If we've received data, finalize with buffered content and treat as normal end-of-stream
     if (receivedAnyChunk) {
-      if (buffer) {
+      if (buffer && !hasCompleted) {
+        hasCompleted = true;
         onComplete(buffer);
       }
       try { eventSource.close(); } catch {}
       return;
     }
 
-    if (eventSource.readyState === EventSource.CONNECTING) {
-      onError('Failed to connect to server');
-    } else if (eventSource.readyState === EventSource.CLOSED) {
-      onError('Connection closed unexpectedly');
-    } else {
-      onError('Connection error occurred');
+    // Handle connection errors only if not completed
+    if (!hasCompleted) {
+      hasCompleted = true;
+      if (eventSource.readyState === EventSource.CONNECTING) {
+        onError('Failed to connect to server');
+      } else if (eventSource.readyState === EventSource.CLOSED) {
+        onError('Connection closed unexpectedly');
+      } else {
+        onError('Connection error occurred');
+      }
     }
 
     try { eventSource.close(); } catch {}

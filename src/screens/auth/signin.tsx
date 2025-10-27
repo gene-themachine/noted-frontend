@@ -98,7 +98,7 @@ export default function SignInPage() {
       </header>
 
       {/* Main Content */}
-      <main className="relative px-6 lg:px-8 py-12 pt-32 min-h-screen flex items-center justify-center">
+      <main className="relative px-6 lg:px-8 py-12 pt-24 min-h-screen flex items-center justify-center">
         <div className="w-full max-w-lg mx-auto">
           {/* Welcome Badge */}
           <div className="text-center mb-8">

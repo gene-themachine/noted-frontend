@@ -169,35 +169,29 @@ export default function TreeNode({ node, path, projectId, onMobileClose, activeI
             </span>
           </div>
 
-          <AnimatePresence>
-            {isFolder && isHovered && !isBeingDragged && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8, x: -8 }}
-                animate={{ opacity: 1, scale: 1, x: 0 }}
-                exit={{ opacity: 0, scale: 0.8, x: -8 }}
-                transition={{ duration: 0.15 }}
-                className="flex items-center gap-1 flex-shrink-0 ml-2"
-                onPointerDown={(e) => e.stopPropagation()}
-              >
-                <button
-                  type="button"
-                  onClick={handleAddClick}
-                  className="w-7 h-7 flex items-center justify-center text-gray-600 hover:text-primary-blue hover:bg-primary-blue/10 rounded-lg transition-all duration-200 text-base font-semibold"
-                  aria-label="Add item"
-                >
-                  +
-                </button>
-                <button
-                  type="button"
-                  onClick={handleDeleteClick}
-                  className="w-7 h-7 flex items-center justify-center text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-                  aria-label="Delete folder"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          <div
+            className={`flex items-center gap-1 flex-shrink-0 ml-2 transition-opacity duration-150 ${
+              isFolder && isHovered && !isBeingDragged ? 'opacity-100' : 'opacity-0 pointer-events-none'
+            }`}
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={handleAddClick}
+              className="w-7 h-7 flex items-center justify-center text-gray-600 hover:text-primary-blue hover:bg-primary-blue/10 rounded-lg transition-all duration-200 text-base font-semibold"
+              aria-label="Add item"
+            >
+              +
+            </button>
+            <button
+              type="button"
+              onClick={handleDeleteClick}
+              className="w-7 h-7 flex items-center justify-center text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+              aria-label="Delete folder"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
 
         <AnimatePresence>

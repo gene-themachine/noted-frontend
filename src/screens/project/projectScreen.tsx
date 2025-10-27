@@ -20,6 +20,7 @@ const ProjectScreen = () => {
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
   const [isLibraryModalOpen, setIsLibraryModalOpen] = useState(false);
   const [isNoteSelectionOpen, setIsNoteSelectionOpen] = useState(false);
+  const [isComingSoonModalOpen, setIsComingSoonModalOpen] = useState(false);
   const [noteSelectionResolve, setNoteSelectionResolve] = useState<((note: NoteSummary | null) => void) | null>(null);
   const [librarySelectionResolve, setLibrarySelectionResolve] = useState<((items: { id: string; name: string }[]) => void) | null>(null);
 
@@ -145,14 +146,14 @@ const ProjectScreen = () => {
   };
 
   return (
-    <div className="flex flex-col h-full w-full">
-      <div className="flex-grow flex items-center justify-center">
+    <div className="relative w-full flex-grow">
+      {/* Center Blue Circle - Fixed positioning for true centering */}
+      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
         <button
-          onClick={() => setIsQuickActionModalOpen(true)}
-          className="flex items-center justify-center w-48 h-48 bg-primary-blue hover:bg-primary-blue-hover rounded-full shadow-lg transition-all duration-300 hover:scale-105"
-          aria-label="Start quick action"
+          onClick={() => setIsComingSoonModalOpen(true)}
+          className="w-56 h-56 rounded-full bg-primary-blue hover:bg-hover-blue shadow-2xl transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-primary-blue focus:ring-offset-4"
+          aria-label="New feature"
         >
-          <Plus className="w-16 h-16 text-white" />
         </button>
       </div>
 
@@ -208,6 +209,26 @@ const ProjectScreen = () => {
         notes={projectNotes || []}
         theme="light"
       />
+
+      {/* Coming Soon Modal */}
+      {isComingSoonModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4 text-center">
+              New Feature Coming Soon!
+            </h2>
+            <p className="text-gray-600 text-center mb-6">
+              We're working on something exciting. Stay tuned!
+            </p>
+            <button
+              onClick={() => setIsComingSoonModalOpen(false)}
+              className="w-full px-6 py-3 bg-primary-blue text-white rounded-lg hover:bg-hover-blue transition-all duration-200 font-medium"
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

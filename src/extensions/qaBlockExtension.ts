@@ -44,55 +44,168 @@ export const QABlockExtension = Extension.create({
 
   addCommands() {
     return {
-      updateQABlock: (id: string, updates: Partial<QABlockAttributes>) => ({ state, dispatch, editor }) => {
+      updateQABlock: (id: string, updates: Partial<QABlockAttributes>) => ({ editor }) => {
         console.log('🔄 updateQABlock called:', { id, updates });
-        
-        const { tr } = state;
-        let updated = false;
+
+        let foundPos: number | null = null;
+        let nodeSize: number = 0;
 
         // Find the paragraph with the matching data-qa-id attribute
-        state.doc.descendants((node: any, pos: number) => {
-          console.log('🔍 Checking node:', { 
-            type: node.type.name, 
-            attrs: node.attrs, 
-            content: node.textContent?.substring(0, 50) 
-          });
-          
+        editor.state.doc.descendants((node: any, pos: number) => {
           if (node.type.name === 'paragraph' && node.attrs && node.attrs['data-qa-id'] === id) {
-            console.log('📍 Found paragraph with matching ID:', id);
-            
-            // Build the new answer text
-            let answerText = 'A: Generating answer...';
-            if (updates.status === 'error') {
-              answerText = `A: Error - ${updates.errorMessage || 'Failed to generate answer'}`;
-            } else if (updates.answer) {
-              answerText = `A: ${updates.answer}`;
-            }
-            
-            console.log('📝 Updating paragraph with text:', answerText.substring(0, 50) + '...');
-            
-            // Create new text node with updated content
-            const textNode = editor.schema.text(answerText);
-            const newParagraph = editor.schema.nodes.paragraph.create(
-              { 'data-qa-id': id },
-              [textNode]
-            );
-            
-            // Replace the paragraph
-            tr.replaceWith(pos, pos + node.nodeSize, newParagraph);
-            updated = true;
+            console.log('📍 Found paragraph with matching ID at position:', pos);
+            foundPos = pos;
+            nodeSize = node.nodeSize;
             return false; // Stop searching
           }
         });
 
-        if (updated && dispatch) {
-          console.log('✅ Dispatching paragraph update');
-          dispatch(tr);
-        } else {
+        if (foundPos === null) {
           console.log('⚠️ No matching paragraph found for ID:', id);
+          return false;
         }
 
-        return updated;
+        // Build the new answer text
+        // If answer is explicitly undefined and status is 'completed', we're just marking complete without changing content
+        if (updates.status === 'completed' && updates.answer === undefined) {
+          console.log('📝 Marking Q&A as completed without changing answer content');
+          // Just return success - we don't need to update the content, it's already complete from streaming
+          return true;
+        }
+
+        let answerText = 'A: Generating answer...';
+        if (updates.status === 'error') {
+          answerText = `A: Error - ${updates.errorMessage || 'Failed to generate answer'}`;
+        } else if (updates.answer) {
+          answerText = `A: ${updates.answer}`;
+        }
+
+        console.log('📝 Updating paragraph with text:', answerText.substring(0, 50) + '...');
+
+        // Helper function to parse a single line with markdown formatting
+        const parseLineContent = (lineText: string): any[] => {
+          const contentArray: any[] = [];
+          const boldRegex = /\*\*(.+?)\*\*/g;
+          let lastIndex = 0;
+          let match;
+
+          while ((match = boldRegex.exec(lineText)) !== null) {
+            // Add text before the bold
+            if (match.index > lastIndex) {
+              const beforeText = lineText.substring(lastIndex, match.index);
+              contentArray.push({
+                type: 'text',
+                text: beforeText,
+              });
+            }
+
+            // Add bold text
+            contentArray.push({
+              type: 'text',
+              text: match[1],
+              marks: [{ type: 'bold' }],
+            });
+
+            lastIndex = match.index + match[0].length;
+          }
+
+          // Add remaining text after last bold
+          if (lastIndex < lineText.length) {
+            contentArray.push({
+              type: 'text',
+              text: lineText.substring(lastIndex),
+            });
+          }
+
+          // If no content parsed, add plain text
+          if (contentArray.length === 0 && lineText.length > 0) {
+            contentArray.push({
+              type: 'text',
+              text: lineText,
+            });
+          }
+
+          return contentArray;
+        };
+
+        // CRITICAL FIX: During streaming (status: 'loading'), keep everything in a SINGLE paragraph
+        // to prevent duplication issues. Only split into multiple paragraphs when completed.
+        const isStreaming = updates.status === 'loading';
+        const paragraphs: any[] = [];
+
+        if (isStreaming) {
+          // Streaming: Keep as single paragraph, preserve newlines as text content
+          console.log('🔄 Streaming mode: keeping single paragraph');
+          const content = parseLineContent(answerText);
+          paragraphs.push({
+            type: 'paragraph',
+            content: content.length > 0 ? content : [{ type: 'text', text: answerText }],
+            attrs: { 'data-qa-id': id },
+          });
+        } else {
+          // Completed or error: Split by newlines to create multiple paragraphs for better formatting
+          console.log('✅ Completed mode: splitting into multiple paragraphs');
+          const lines = answerText.split('\n');
+
+          for (const line of lines) {
+            const trimmedLine = line.trim();
+
+            // Skip completely empty lines
+            if (trimmedLine.length === 0) {
+              continue;
+            }
+
+            const lineContent = parseLineContent(line);
+
+            // Build paragraph for this line
+            const paragraph: any = {
+              type: 'paragraph',
+              content: lineContent.length > 0 ? lineContent : [{ type: 'text', text: ' ' }],
+            };
+
+            // Only add data-qa-id to the first paragraph if not completed
+            if (paragraphs.length === 0 && updates.status !== 'completed') {
+              paragraph.attrs = { 'data-qa-id': id };
+            }
+
+            paragraphs.push(paragraph);
+          }
+        }
+
+        // Ensure we have at least one paragraph
+        if (paragraphs.length === 0) {
+          paragraphs.push({
+            type: 'paragraph',
+            content: [{ type: 'text', text: answerText }],
+            attrs: updates.status !== 'completed' ? { 'data-qa-id': id } : undefined,
+          });
+        }
+
+        // Build content to insert (single paragraph or multiple)
+        const paragraphContent = paragraphs.length === 1 ? paragraphs[0] : paragraphs;
+
+        // Use TipTap's command API to replace content at position
+        const fromPos = foundPos;
+        const toPos = foundPos + nodeSize;
+
+        console.log('🔄 Replacing content at position:', { fromPos, toPos });
+
+        // Use editor.chain() with insertContentAt for proper state management
+        const success = editor
+          .chain()
+          .insertContentAt(
+            { from: fromPos, to: toPos },
+            paragraphContent
+          )
+          .run();
+
+        if (success) {
+          console.log('✅ Paragraph updated successfully');
+        } else {
+          console.log('❌ Failed to update paragraph');
+        }
+
+        return success;
       },
     };
   },

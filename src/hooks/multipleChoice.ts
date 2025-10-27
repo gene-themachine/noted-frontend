@@ -11,28 +11,9 @@ import {
   MultipleChoiceSet,
 } from '../api/multipleChoice';
 import { toast } from 'react-hot-toast';
-import { useEffect } from 'react';
 
-// Hook to get multiple choice sets for a note with SSE integration
+// Hook to get multiple choice sets for a note
 export const useMultipleChoiceSetsByNote = (noteId: string) => {
-  const queryClient = useQueryClient();
-
-  // Set up SSE for real-time multiple choice updates
-  const { isConnected } = useOptimizedSSE(noteId, {
-    onMultipleChoiceStatus: (data: any) => {
-      // Invalidate queries when multiple choice status changes
-      queryClient.invalidateQueries({ queryKey: ['multipleChoiceSets', noteId] });
-      queryClient.invalidateQueries({ queryKey: ['studyOptions', noteId] });
-      
-      // Show status notifications
-      if (data.status === 'completed') {
-        toast.success(`Multiple choice questions ready! (${data.questionCount} questions)`);
-      } else if (data.status === 'failed') {
-        toast.error('Multiple choice generation failed');
-      }
-    },
-  });
-
   return useQuery({
     queryKey: ['multipleChoiceSets', noteId],
     queryFn: () => getMultipleChoiceSetsByNote(noteId),
@@ -40,10 +21,8 @@ export const useMultipleChoiceSetsByNote = (noteId: string) => {
   });
 };
 
-// Hook to get a specific multiple choice set with SSE integration
+// Hook to get a specific multiple choice set
 export const useMultipleChoiceSet = (setId: string) => {
-  const queryClient = useQueryClient();
-
   return useQuery({
     queryKey: ['multipleChoiceSet', setId],
     queryFn: () => {
@@ -53,7 +32,6 @@ export const useMultipleChoiceSet = (setId: string) => {
     enabled: !!setId,
     select: (data) => {
       console.log('🔍 Hook: Data received from API:', data);
-      // Invalidate when SSE updates come in
       return data;
     },
   });
